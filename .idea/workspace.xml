@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c5195e76-dd1d-4161-b30f-ac13395f6b7d" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CW-Co-Copy1.ipynb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/CW-Co.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/CW-Co.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/graph-segmentation-old.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/graph-segmentation.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/graph-segmentation.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +39,7 @@
       <option name="presentableId" value="Default" />
       <updated>1614985251425</updated>
       <workItem from="1614985252676" duration="79000" />
+      <workItem from="1616883581836" duration="1749000" />
     </task>
     <servers />
   </component>
