@@ -53,7 +53,7 @@ class grainPreprocess():
         combined=cls.combine(image,combine)
         denoised = filters.rank.median(combined, disk(3))
         binary=cls.do_otsu(denoised).astype('uint8')
-        grad = filters.rank.gradient(binary, disk(1))
+        grad = abs(filters.rank.gradient(binary, disk(1))).astype('uint8')
         # у зерен значение пикселя - 0, у тела пустоты - 1, у границы пустоты - 2
         bin_grad=1-binary+grad
         new_image=(bin_grad>0).astype('uint8')*255
@@ -202,8 +202,8 @@ class grainMark():
             mean=(val/num)/255
             dist=distance.euclidean(point1,point2)
         else:
-            mean=0
-            dist=0
+            mean=1
+            dist=1
         return mean,dist
     
     @classmethod
@@ -211,7 +211,7 @@ class grainMark():
         # вычисление расстояния и среднего значения между 
         # точкой с индексом posion и остальными точками пустоты
         v1=node[position]
-        vals=np.zeros((len(node),3))
+        vals=np.zeros((len(node),2))
         if v1!=0:
             for i,v2 in enumerate(node):
 
@@ -220,10 +220,10 @@ class grainMark():
                     point1=corners[v1]
                     point2=corners[v2]
                     mean,dist=cls.mean_pixel(image,point1[0],point2[0],radius)
-                    vals[i,1]=mean
-                    vals[i,2]=dist
+                    vals[i,1]=abs(mean-0.5)*dist
+               #     vals[i,2]=dist
 
-        vals=vals[np.argsort(vals[:,2])]
+      #  vals=vals[np.argsort(vals[:,2])]
         return vals
     
     @classmethod
@@ -259,19 +259,19 @@ class grainMark():
                     vals=vals[non_zero_indeces]
                 #    print('new kernel point')
 
-    #                min_val=vals.min(axis=0)[1]
-                    for j,val in enumerate(vals):
-                        mean=val[1]
-                        if abs(mean-0.5)<=eps:
-                            v2=val[0]
-                            break
-                        elif j==vals.shape[0]-1:
-                            v2=val[0]
-                            break
+                    min_val=vals.min(axis=0)[1]
+           #         for j,val in enumerate(vals):
+         #               mean=val[1]
+          #              if abs(mean-0.5)<=eps:
+            #                v2=val[0]
+            #                break
+            #            elif j==vals.shape[0]-1:
+              #              v2=val[0]
+             #               break
 
                   #  print('min_val',min_val)
-     #               v2_vals_index=np.where(vals[:,1]==min_val )[0][0]
-               #     v2=vals[v2_vals_index][0]
+                    v2_vals_index=np.where(vals[:,1]==min_val )[0][0]
+                    v2=vals[v2_vals_index][0]
                #     print('v2',v2)
 
                     new_nodes[i,step]=v2
@@ -296,6 +296,41 @@ class grainMark():
                 continue
             new_nodes[i,-1]= orig_node_len
         return new_nodes
+    
+        @classmethod
+        def sor_perimetr_hull(cls,image,nodes,corners,color=(51,51,51)):
+            new_nodes=np.zeros(nodes.shape,dtype='int64')
+           
+
+            for i,node in enumerate(nodes):
+
+                if node[0]!=0 and node[-1]>2:
+                    l=node[-1]
+                    points=np.zeros((l,2))
+                    for j,point in enumerate(node[:l]):
+                        points[j]=corners[point,0] 
+
+                    hull=ConvexHull(points)
+                    for simplex in hull.simplices:
+                        (x1,x2)=points[simplex, 0]
+                        (y1,y2)= points[simplex, 1]
+
+
+            for j,node in enumerate(nodes):
+                if len(node)>1:
+                    r=3
+                    len_node=node[-1]
+
+                    for i,point in enumerate(node[: len_node]):
+                        point2=corners[point][0]
+                        x2,y2=point2[0],point2[1]
+
+                else:
+                    continue
+
+          
+
+            return  img
 
 class grainShow():
     
@@ -364,9 +399,9 @@ class grainDraw():
         return image
     
     @classmethod
-    def draw_edges(image,nodes,corners,color=(51,51,51)):
-
-        im = Image.fromarray(np.uint8(cm.gist_earth(image)*255))
+    def draw_edges(cls,image,nodes,corners,color=(51,51,51)):
+        new_image=copy.copy(image)
+        im = Image.fromarray(np.uint8(cm.gist_earth(new_image)*255))
         draw = ImageDraw.Draw(im)
         for j,node in enumerate(nodes):
             if len(node)>1:
