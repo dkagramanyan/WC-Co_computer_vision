@@ -21,16 +21,17 @@ from scipy.spatial import ConvexHull
 class grainPreprocess(): 
 
     @classmethod
-    def imdivide(cls,image,side):
+    def imdivide(cls,image,h,side):
 
         width,height = image.size
         sides={'left':0,'right':1}
-        shape=[(0,0,width//2,height),(width//2,0,width,height)]
+        shape=[(0,0,width//2,height-h),(width//2,0,width,height-h)]
         return image.crop(shape[sides[side]])
+    
     @classmethod
-    def combine(cls,image,k=0.5): 
-        left_img=cls.imdivide(image,'left')
-        right_img=cls.imdivide(image,'right')
+    def combine(cls,image,h,k=0.5): 
+        left_img=cls.imdivide(image,h,'left')
+        right_img=cls.imdivide(image,h,'right')
 
         l=k
         r=1-l
@@ -48,9 +49,10 @@ class grainPreprocess():
 
         return binary_global
     
+    
     @classmethod
-    def image_preprocess(cls,image,combine=0.5):
-        combined=cls.combine(image,combine)
+    def image_preprocess(cls,image,h,k=0.5):
+        combined=cls.combine(image,h,k)
         denoised = filters.rank.median(combined, disk(3))
         binary=cls.do_otsu(denoised).astype('uint8')
         grad = abs(filters.rank.gradient(binary, disk(1))).astype('uint8')

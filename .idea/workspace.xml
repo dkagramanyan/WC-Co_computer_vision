@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c5195e76-dd1d-4161-b30f-ac13395f6b7d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/02-Co_segmentation_2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/02-Co_segmentation_2.ipynb" afterDir="false" />
-    </list>
+    <list default="true" id="c5195e76-dd1d-4161-b30f-ac13395f6b7d" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -43,6 +41,7 @@
       <workItem from="1614985252676" duration="79000" />
       <workItem from="1616883581836" duration="2334000" />
       <workItem from="1618415678163" duration="15000" />
+      <workItem from="1618780494544" duration="2000" />
     </task>
     <servers />
   </component>
