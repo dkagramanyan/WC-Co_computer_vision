@@ -11,6 +11,8 @@ from skimage import io
 from skimage.color import rgb2gray
 from skimage import filters
 from skimage.morphology import disk
+from skimage.measure import approximate_polygon
+
 
 from PIL import Image, ImageDraw, ImageFilter,ImageOps
 import copy
@@ -299,40 +301,139 @@ class grainMark():
             new_nodes[i,-1]= orig_node_len
         return new_nodes
     
-        @classmethod
-        def sor_perimetr_hull(cls,image,nodes,corners,color=(51,51,51)):
-            new_nodes=np.zeros(nodes.shape,dtype='int64')
-           
-
-            for i,node in enumerate(nodes):
-
-                if node[0]!=0 and node[-1]>2:
-                    l=node[-1]
-                    points=np.zeros((l,2))
-                    for j,point in enumerate(node[:l]):
-                        points[j]=corners[point,0] 
-
-                    hull=ConvexHull(points)
-                    for simplex in hull.simplices:
-                        (x1,x2)=points[simplex, 0]
-                        (y1,y2)= points[simplex, 1]
+    @classmethod
+    def sor_perimetr_hull(cls,image,nodes,corners,color=(51,51,51)):
+        new_nodes=np.zeros(nodes.shape,dtype='int64')
 
 
-            for j,node in enumerate(nodes):
-                if len(node)>1:
-                    r=3
-                    len_node=node[-1]
+        for i,node in enumerate(nodes):
 
-                    for i,point in enumerate(node[: len_node]):
-                        point2=corners[point][0]
-                        x2,y2=point2[0],point2[1]
+            if node[0]!=0 and node[-1]>2:
+                l=node[-1]
+                points=np.zeros((l,2))
+                for j,point in enumerate(node[:l]):
+                    points[j]=corners[point,0] 
 
-                else:
-                    continue
+                hull=ConvexHull(points)
+                for simplex in hull.simplices:
+                    (x1,x2)=points[simplex, 0]
+                    (y1,y2)= points[simplex, 1]
 
-          
 
-            return  img
+        for j,node in enumerate(nodes):
+            if len(node)>1:
+                r=3
+                len_node=node[-1]
+
+                for i,point in enumerate(node[: len_node]):
+                    point2=corners[point][0]
+                    x2,y2=point2[0],point2[1]
+
+            else:
+                continue
+
+
+
+        return  img
+        
+    @classmethod
+    def get_contours(cls,image):
+        edges = cv2.Canny(image,0,255,L2gradient=False)
+
+        # направление обхода контура по часовой стрелке
+        contours, hierarchy = cv2.findContours( edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+
+        new_contours=[]
+        for j,cnt in enumerate(contours):
+            if len(cnt)>1:
+                coords = approximate_polygon(cnt[:,0], tolerance=3)
+                new_contours.append(coords)
+            else:
+                continue
+
+        return new_contours
+        
+    @classmethod
+    def get_angles(cls,image):
+        #
+        # считаем углы с направлением обхода контура против часовой стрелки, углы >180 градусов учитываются
+        #
+        approx=cls.get_contours(image)
+
+        # вычисление угла
+        angles=[]
+        for k,cnt in enumerate(approx):
+            l=len(cnt)
+            if l>2:
+                for i in range(l)[1:l-1]:
+                    point1=cnt[i-1]
+                    point2=cnt[i]
+                    point3=cnt[i+1]
+                    x1,y1=point1[1],point1[0]
+                    x2,y2=point2[1],point2[0]
+                    x3,y3=point3[1],point3[0]
+
+                    v1=np.array((x1-x2,y1-y2)).reshape(1,2)
+                    v2=np.array((x3-x2,y3-y2)).reshape(1,2)
+
+                    dot=np.dot(v1[0],v2[0])
+                    dist1 = np.linalg.norm(v1[0])
+                    dist2 = np.linalg.norm(v2[0])
+                    cos=dot/(dist1*dist2)
+
+                    v=np.concatenate([v1,v2])
+                    det=np.linalg.det(v)
+
+                    if abs(cos)<1:
+                        ang=int(np.arccos(cos)*180/np.pi) 
+                        if det<0 :
+                            angles.append(ang)
+                        else:
+                            angles.append(360-ang)
+
+        return np.array(angles)
+        
+    @classmethod
+    def get_statistics(cls,array,step):
+        # приведенеи углов к кратости, например 0,step,2*step и тд
+        array_copy=array.copy()
+
+        for i,a in enumerate(array_copy):
+            while array_copy[i]%step!=0:
+                array_copy[i]+=1
+
+        array_copy_set=np.sort(np.array(list(set(array_copy))))
+        dens_curve=[]
+        for arr in array_copy_set:
+            num=0
+            for ar in array_copy:
+                if arr==ar:
+                    num+=1
+            dens_curve.append(num)
+        return np.array(array_copy),array_copy_set,np.array(dens_curve)
+        
+    @classmethod
+    def get_diametrs(cls,image):
+        approx=cls.get_contours(image)
+        distances=[]
+        for cnt in approx:
+            l=len(cnt)
+            if l>1:
+                max_dist=0
+                for point1 in cnt:
+                    v1=np.array((point1[1],point1[0]))
+                    for point2 in cnt:
+                        v2=np.array((point2[1],point2[0]))
+                        v=np.array((v1-v2))
+
+                        dist = int(np.linalg.norm(v))
+
+                        if dist>max_dist and dist!=0:
+                            max_dist=dist
+
+                distances.append(max_dist)
+
+        return np.array(distances)
 
 class grainShow():
     
@@ -401,7 +502,7 @@ class grainDraw():
         return image
     
     @classmethod
-    def draw_edges(cls,image,nodes,corners,color=(51,51,51)):
+    def draw_edges_nodes(cls,image,nodes,corners,color=(51,51,51)):
         new_image=copy.copy(image)
         im = Image.fromarray(np.uint8(cm.gist_earth(new_image)*255))
         draw = ImageDraw.Draw(im)
@@ -464,6 +565,34 @@ class grainDraw():
                     point2=corners[point][0]
                     x2,y2=point2[0],point2[1]
                     draw.ellipse((y2-r,x2-r,y2+r,x2+r), fill=color, width=4)
+            else:
+                continue
+
+        img=np.array(im)
+
+        return  img
+    
+    @classmethod
+    def draw_edges(cls,image,cnts,color=(50,50,50)):
+        new_image=copy.copy(image)
+        im = Image.fromarray(np.uint8(cm.gist_earth(new_image)*255))
+        draw = ImageDraw.Draw(im)
+
+        for j,cnt in enumerate(cnts):
+            if len(cnt)>1:
+                point=cnt[0]
+                x1,y1=point[1],point[0]
+                r=4
+
+                for i,point2 in enumerate(cnt):
+                    p2=point2
+
+                    x2,y2=p2[1],p2[0]
+
+                    draw.ellipse((y2-r,x2-r,y2+r,x2+r), fill=color, width=5)
+                    draw.line((y1,x1,y2,x2), fill=(100,100,100), width=4)
+                    x1,y1=x2,y2
+
             else:
                 continue
 
