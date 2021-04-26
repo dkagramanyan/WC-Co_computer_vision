@@ -40,14 +40,14 @@ class grainPreprocess():
         gray=np.array(left_img)*l
         gray+=np.array(right_img)*r
         gray=gray.astype('uint8')
-        return gray
+        img=rgb2gray(gray)
+        return img
 
     @classmethod
     def do_otsu(cls,img):
-        image=rgb2gray(img)
 
-        global_thresh=filters.threshold_otsu(image)
-        binary_global = image > global_thresh
+        global_thresh=filters.threshold_otsu(img)
+        binary_global = img > global_thresh
 
         return binary_global
     
