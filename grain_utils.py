@@ -336,17 +336,28 @@ class grainMark():
 
         return  img
         
+       
+    
     @classmethod
-    def get_contours(cls,image):
+    def get_row_contours(cls,image):
         edges = cv2.Canny(image,0,255,L2gradient=False)
 
         # направление обхода контура по часовой стрелке
-        contours, hierarchy = cv2.findContours( edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+        contours,_ = cv2.findContours( edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+        contours=np.array(contours)
+        for i,cnt in enumerate(contours):
+            contours[i]=cnt[:,0]
+        return contours
+    
+    @classmethod
+    def get_contours(cls,image):
+
+        contours=cls.get_row_contours(image)
 
         new_contours=[]
         for j,cnt in enumerate(contours):
             if len(cnt)>1:
-                coords = approximate_polygon(cnt[:,0], tolerance=3)
+                coords = approximate_polygon(cnt, tolerance=3)
                 new_contours.append(coords)
             else:
                 continue
@@ -439,6 +450,9 @@ class grainShow():
     
     @classmethod
     def img_show(cls,image,N=20,cmap=plt.cm.nipy_spectral):
+        #
+        # выводит изображение image
+        #
 
         plt.figure(figsize=(N,N))
         plt.axis('off')
@@ -574,6 +588,9 @@ class grainDraw():
     
     @classmethod
     def draw_edges(cls,image,cnts,color=(50,50,50)):
+        #
+        # рисует на изображении линии по точкам контура cnts
+        #
         new_image=copy.copy(image)
         im = Image.fromarray(np.uint8(cm.gist_earth(new_image)*255))
         draw = ImageDraw.Draw(im)
