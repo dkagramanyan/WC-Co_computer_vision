@@ -3,6 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import cm
 
+from lmfit.models import Model
+
 
 from scipy import ndimage as ndi
 from scipy.spatial import distance
@@ -617,4 +619,48 @@ class grainDraw():
 
         return  img
         
+class grainStats():
     
+    @classmethod
+    def gaussian(cls,x, mu, sigma,amp=1):
+        #
+        # возвращает нормальную фунцию по заданным параметрам
+        #
+        return np.array((amp/(np.sqrt(2*np.pi)*sigma))*np.exp(-(x-mu)**2 / (2*sigma**2)))
+    
+    @classmethod
+    def gaussian_bimodal(cls,x,mu1,mu2,sigma1,sigma2,amp1=1,amp2=1):
+        #
+        # возвращает бимодальную нормальную фунцию по заданным параметрам
+        #
+        return cls.gaussian(x,mu1,sigma1,amp1)+cls.gaussian(x,mu2,sigma2,amp2)
+
+class grainApprox():
+    
+    @classmethod
+    def gaussian_fit(cls,y , x,mu=1,sigma=1,amp=1):
+        #
+        # аппроксимация заданных точек нормальной функцией
+        #
+        gmodel = Model(grainStats.gaussian)
+        res = gmodel.fit(y, x=x, mu=mu,sigma=sigma,amp=amp)
+        
+        mu=res.params['mu'].value
+        sigma=res.params['sigma'].value
+        amp=res.params['amp'].value
+        
+        return mu,sigma,amp
+
+    @classmethod 
+    def gaussian_fit_bimodal(cls,y , x, mu1=100,mu2=240,sigma1=30,sigma2=30,amp1=1,amp2=1):
+        #
+        # аппроксимация заданных точек бимодальной нормальной функцией
+        #
+        gmodel = Model(grainStats.gaussian_bimodal)
+        res = gmodel.fit(y, x=x, mu1=mu1,mu2=mu2,sigma1=sigma1,sigma2=sigma2,amp1=amp1,amp2=amp2)
+        
+        mus=[res.params['mu1'].value,res.params['mu2'].value]
+        sigmas=[res.params['sigma1'].value,res.params['sigma2'].value]
+        amps=[res.params['amp1'].value,res.params['amp2'].value]
+        
+        return mus,sigmas,amps
