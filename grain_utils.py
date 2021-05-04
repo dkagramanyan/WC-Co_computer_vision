@@ -5,11 +5,15 @@ from matplotlib import cm
 
 from lmfit.models import Model
 
+from shapely.geometry import Polygon
+
+from radio_beam.commonbeam import getMinVolEllipse
 
 from scipy import ndimage as ndi
 from scipy.spatial import distance
 
 from skimage import io
+from skimage.measure import EllipseModel
 from skimage.color import rgb2gray
 from skimage import filters
 from skimage.morphology import disk
@@ -17,6 +21,7 @@ from skimage.measure import approximate_polygon
 
 
 from PIL import Image, ImageDraw, ImageFilter,ImageOps
+
 import copy
 import cv2
 
@@ -405,25 +410,52 @@ class grainMark():
                             angles.append(360-ang)
 
         return np.array(angles)
-        
+    
     @classmethod
-    def get_statistics(cls,array,step):
-        # приведенеи углов к кратости, например 0,step,2*step и тд
-        array_copy=array.copy()
+    def get_mvee_params(cls,image,tol=0.2):
+        #
+        # возвращает полуоси и угол поворота фигуры minimal volume enclosing ellipsoid,
+        # которая ограничивает исходные точки контура эллипсом
+        # 
+        approx=grainMark.get_row_contours(image)
+        a_beams=[]
+        b_beams=[]
+        angles=[]
+        centroids=[]
+        for i,cnt in enumerate(approx):
 
-        for i,a in enumerate(array_copy):
-            while array_copy[i]%step!=0:
-                array_copy[i]+=1
+            cnt=np.array(cnt)
+            polygon=Polygon(cnt)
 
-        array_copy_set=np.sort(np.array(list(set(array_copy))))
-        dens_curve=[]
-        for arr in array_copy_set:
-            num=0
-            for ar in array_copy:
-                if arr==ar:
-                    num+=1
-            dens_curve.append(num)
-        return np.array(array_copy),array_copy_set,np.array(dens_curve)
+            x_centroid,y_centroid=polygon.centroid.coords[0]
+            points=cnt-(x_centroid,y_centroid)
+
+            x_norm,y_norm=points.mean(axis=0)
+            points = (points-(x_norm,y_norm))
+
+            data=getMinVolEllipse(points,tol)
+
+            data=np.array(data)
+            xc,yc=data[0][0]
+            a,b=data[1]
+            sin=data[2][0,1]
+            angle=-np.arcsin(sin)
+
+            a_beams.append(a)
+            b_beams.append(b)
+            angles.append(angle)
+            centroids.append([x_centroid+x_norm,y_centroid+y_norm])
+
+        a_beams=np.array(a_beams)
+        b_beams=np.array(b_beams)
+        angles=np.array(angles)
+        centroids=np.array(centroids)
+
+
+        return a_beams,b_beams,angles,centroids
+
+    
+ 
         
     @classmethod
     def get_diametrs(cls,image):
@@ -622,6 +654,25 @@ class grainDraw():
 class grainStats():
     
     @classmethod
+    def stats_preprocess(cls,array,step):
+        # приведенеи углов к кратости, например 0,step,2*step и тд
+        array_copy=array.copy()
+
+        for i,a in enumerate(array_copy):
+            while array_copy[i]%step!=0:
+                array_copy[i]+=1
+
+        array_copy_set=np.sort(np.array(list(set(array_copy))))
+        dens_curve=[]
+        for arr in array_copy_set:
+            num=0
+            for ar in array_copy:
+                if arr==ar:
+                    num+=1
+            dens_curve.append(num)
+        return np.array(array_copy),array_copy_set,np.array(dens_curve)
+    
+    @classmethod
     def gaussian(cls,x, mu, sigma,amp=1):
         #
         # возвращает нормальную фунцию по заданным параметрам
@@ -634,6 +685,17 @@ class grainStats():
         # возвращает бимодальную нормальную фунцию по заданным параметрам
         #
         return cls.gaussian(x,mu1,sigma1,amp1)+cls.gaussian(x,mu2,sigma2,amp2)
+    
+    @classmethod
+    def ellipse(cls,a,b,angle,xc=0,yc=0,num=50):
+        #
+        #  возвращает координаты эллипса, построенного по заданным параметрам
+        #  по умолчанию центр (0,0)
+        #  угол в радианах, уменьшение угла обозначает поворот эллипса по часовой стрелке
+        #
+        xy = EllipseModel().predict_xy(np.linspace(0, 2 * np.pi, num),
+                               params=(xc, yc, a, b, angle))
+        return xy[:,0],xy[:,1]
 
 class grainApprox():
     
