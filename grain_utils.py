@@ -423,33 +423,33 @@ class grainMark():
         angles=[]
         centroids=[]
         for i,cnt in enumerate(approx):
+            if len(cnt)>2:
+                cnt=np.array(cnt)
+                polygon=Polygon(cnt)
 
-            cnt=np.array(cnt)
-            polygon=Polygon(cnt)
+                x_centroid,y_centroid=polygon.centroid.coords[0]
+                points=cnt-(x_centroid,y_centroid)
 
-            x_centroid,y_centroid=polygon.centroid.coords[0]
-            points=cnt-(x_centroid,y_centroid)
+                x_norm,y_norm=points.mean(axis=0)
+                points = (points-(x_norm,y_norm))
 
-            x_norm,y_norm=points.mean(axis=0)
-            points = (points-(x_norm,y_norm))
+                data=getMinVolEllipse(points,tol)
 
-            data=getMinVolEllipse(points,tol)
+                data=np.array(data)
+                xc,yc=data[0][0]
+                a,b=data[1]
+                sin=data[2][0,1]
+                angle=-np.arcsin(sin)
 
-            data=np.array(data)
-            xc,yc=data[0][0]
-            a,b=data[1]
-            sin=data[2][0,1]
-            angle=-np.arcsin(sin)
+                a_beams.append(a)
+                b_beams.append(b)
+                angles.append(angle)
+                centroids.append([x_centroid+x_norm,y_centroid+y_norm])
 
-            a_beams.append(a)
-            b_beams.append(b)
-            angles.append(angle)
-            centroids.append([x_centroid+x_norm,y_centroid+y_norm])
-
-        a_beams=np.array(a_beams)
-        b_beams=np.array(b_beams)
-        angles=np.array(angles)
-        centroids=np.array(centroids)
+        a_beams=np.array(a_beams,dtype='int32')
+        b_beams=np.array(b_beams,dtype='int32')
+        angles=np.array(angles,dtype='float32')
+        centroids=np.array(centroids,dtype='int32')
 
 
         return a_beams,b_beams,angles,centroids
