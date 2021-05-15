@@ -31,7 +31,9 @@ class grainPreprocess():
 
     @classmethod
     def imdivide(cls,image,h,side):
-
+        #
+        # возвращает левую или правую часть полученного изображения
+        #
         width,height = image.size
         sides={'left':0,'right':1}
         shape=[(0,0,width//2,height-h),(width//2,0,width,height-h)]
@@ -39,6 +41,10 @@ class grainPreprocess():
     
     @classmethod
     def combine(cls,image,h,k=0.5): 
+        #
+        #  накладывает левую и правые части изображения
+        #  если k=1, то на выходе будет левая часть изображения, если k=0, то будет правая часть
+        #
         left_img=cls.imdivide(image,h,'left')
         right_img=cls.imdivide(image,h,'right')
 
@@ -52,7 +58,9 @@ class grainPreprocess():
 
     @classmethod
     def do_otsu(cls,img):
-
+        #
+        # бинаризация отсу
+        #
         global_thresh=filters.threshold_otsu(img)
         binary_global = img > global_thresh
 
@@ -61,16 +69,96 @@ class grainPreprocess():
     
     @classmethod
     def image_preprocess(cls,image,h,k=0.5):
+        #
+        # комбинация медианного фильтра, биноризации и гражиента
+        # у зерен значение пикселя - 0, у регионов связ. в-ва - 1,а у их границы - 2
+        #
         combined=cls.combine(image,h,k)
         denoised = filters.rank.median(combined, disk(3))
         binary=cls.do_otsu(denoised).astype('uint8')
         grad = abs(filters.rank.gradient(binary, disk(1))).astype('uint8')
-        # у зерен значение пикселя - 0, у тела пустоты - 1, у границы пустоты - 2
         bin_grad=1-binary+grad
         new_image=(bin_grad>0).astype('uint8')*255
 
         return new_image
 
+class grainFig():
+    
+    @classmethod
+    def line(cls,point1,point2):
+        #
+        # возвращает растровые координаты прямой между двумя точками 
+        #
+        line=[]
+
+        x1,y1=point1[0],point1[1]
+        x2,y2=point2[0],point2[1]
+
+        dx = x2 - x1
+        dy = y2 - y1
+
+        sign_x = 1 if dx>0 else -1 if dx<0 else 0
+        sign_y = 1 if dy>0 else -1 if dy<0 else 0
+
+        if dx < 0: dx = -dx
+        if dy < 0: dy = -dy
+
+        if dx > dy:
+            pdx, pdy = sign_x, 0
+            es, el = dy, dx
+        else:
+            pdx, pdy = 0, sign_y
+            es, el = dx, dy
+
+        x, y = x1, y1
+        error, t = el/2, 0        
+
+        line.append((x, y))
+
+        while t < el:
+            error -= es
+            if error < 0:
+                error += el
+                x += sign_x
+                y += sign_y
+            else:
+                x += pdx
+                y += pdy
+            t += 1
+            line.append((x, y))
+        return np.array(line).astype('int')
+    
+    @classmethod
+    def rect(cls,point1,point2,r):
+        #
+        # возвращает растровые координаты прямоугольника ширины 2r,
+        # построеного между двумя точками 
+        #
+        x1,y1=point1[0],point1[1]
+        x2,y2=point2[0],point2[1]
+
+        l1,l2=(x2-x1),(y2-y1)
+
+        l_len=(l1**2+l2**2)**0.5
+        l_len=int(l_len)
+
+        a=(x1-r*l2/l_len),(y1+r*l1/l_len)
+        b=(x1+r*l2/l_len),(y1-r*l1/l_len)
+
+        side=cls.line(a,b)
+
+        # a -> c
+        lines=np.zeros((side.shape[0],l_len*2,2),dtype='int64')
+
+        for i,left_point in enumerate(side):
+            right_point=(left_point[0]+l1),(left_point[1]+l2)
+            line_points=cls.get_line(left_point,right_point)
+            for j,point in enumerate(line_points):
+                lines[i,j]=point
+
+        return lines
+    
+    
 class grainMark():
     @classmethod
     def mark_corners_and_classes(cls,image,max_num=100000,sens=0.1,max_dist=1):
@@ -121,84 +209,7 @@ class grainMark():
         return nodes,classes,classes_num,corners
 
 
-    
-    @classmethod
-    def get_line(cls,point1,point2):
-        line=[]
-
-        x1,y1=point1[0],point1[1]
-        x2,y2=point2[0],point2[1]
-
-        dx = x2 - x1
-        dy = y2 - y1
-
-        sign_x = 1 if dx>0 else -1 if dx<0 else 0
-        sign_y = 1 if dy>0 else -1 if dy<0 else 0
-
-        if dx < 0: dx = -dx
-        if dy < 0: dy = -dy
-
-        if dx > dy:
-            pdx, pdy = sign_x, 0
-            es, el = dy, dx
-        else:
-            pdx, pdy = 0, sign_y
-            es, el = dx, dy
-
-        x, y = x1, y1
-        error, t = el/2, 0        
-
-        line.append((x, y))
-
-        while t < el:
-            error -= es
-            if error < 0:
-                error += el
-                x += sign_x
-                y += sign_y
-            else:
-                x += pdx
-                y += pdy
-            t += 1
-            line.append((x, y))
-        return np.array(line).astype('int')
-    
-    @classmethod
-    def draw_rect(cls,image,point1,point2,r):
-
-        x1,y1=point1[0],point1[1]
-        x2,y2=point2[0],point2[1]
-
-        l1,l2=(x2-x1),(y2-y1)
-
-        l_len=(l1**2+l2**2)**0.5
-        l_len=int(l_len)
-
-        a=(x1-r*l2/l_len),(y1+r*l1/l_len)
-        b=(x1+r*l2/l_len),(y1-r*l1/l_len)
-
-        side=cls.get_line(a,b)
-
-        # a -> c
-        lines=np.zeros((side.shape[0],l_len*2,2),dtype='int64')
-
-        for i,left_point in enumerate(side):
-            right_point=(left_point[0]+l1),(left_point[1]+l2)
-            line_points=cls.get_line(left_point,right_point)
-            for j,point in enumerate(line_points):
-                lines[i,j]=point
-
-        val=0
-        num=0
-        for line in lines:
-            for point in line:
-                if point[0]!=0:
-                    x=point[0]
-                    y=point[1]
-
-                    val+=image[x,y]
-                    num+=1
-        return val,num
+   
     
     @classmethod
     def mean_pixel(cls,image,point1,point2,r):
@@ -454,31 +465,7 @@ class grainMark():
 
         return a_beams,b_beams,angles,centroids
 
-    
- 
-        
-    @classmethod
-    def get_diametrs(cls,image):
-        approx=cls.get_contours(image)
-        distances=[]
-        for cnt in approx:
-            l=len(cnt)
-            if l>1:
-                max_dist=0
-                for point1 in cnt:
-                    v1=np.array((point1[1],point1[0]))
-                    for point2 in cnt:
-                        v2=np.array((point2[1],point2[0]))
-                        v=np.array((v1-v2))
 
-                        dist = int(np.linalg.norm(v))
-
-                        if dist>max_dist and dist!=0:
-                            max_dist=dist
-
-                distances.append(max_dist)
-
-        return np.array(distances)
 
 class grainShow():
     
@@ -655,7 +642,9 @@ class grainStats():
     
     @classmethod
     def stats_preprocess(cls,array,step):
-        # приведенеи углов к кратости, например 0,step,2*step и тд
+        #
+        # приведение углов к кратости, например 0,step,2*step и тд
+        #
         array_copy=array.copy()
 
         for i,a in enumerate(array_copy):
@@ -685,6 +674,13 @@ class grainStats():
         # возвращает бимодальную нормальную фунцию по заданным параметрам
         #
         return cls.gaussian(x,mu1,sigma1,amp1)+cls.gaussian(x,mu2,sigma2,amp2)
+    
+    @classmethod
+    def gaussian_termodal(cls,x,mu1,mu2,mu3,sigma1,sigma2,sigma3,amp1=1,amp2=1,amp3=1):
+        #
+        # возвращает термодальную нормальную фунцию по заданным параметрам
+        #
+        return cls.gaussian(x,mu1,sigma1,amp1)+cls.gaussian(x,mu2,sigma2,amp2)+cls.gaussian(x,mu3,sigma3,amp3)
     
     @classmethod
     def ellipse(cls,a,b,angle,xc=0,yc=0,num=50):
@@ -724,5 +720,19 @@ class grainApprox():
         mus=[res.params['mu1'].value,res.params['mu2'].value]
         sigmas=[res.params['sigma1'].value,res.params['sigma2'].value]
         amps=[res.params['amp1'].value,res.params['amp2'].value]
+        
+        return mus,sigmas,amps
+    
+    @classmethod 
+    def gaussian_fit_termodal(cls,y , x, mu1=10,mu2=100,mu3=240,sigma1=10,sigma2=30,sigma3=30,amp1=1,amp2=1,amp3=1):
+        #
+        # аппроксимация заданных точек термодальной нормальной функцией
+        #
+        gmodel = Model(grainStats.gaussian_termodal)
+        res = gmodel.fit(y, x=x, mu1=mu1,mu2=mu2,mu3=mu3,sigma1=sigma1,sigma2=sigma2,sigma3=sigma3,amp1=amp1,amp2=amp2,amp3=amp3)
+        
+        mus=[res.params['mu1'].value,res.params['mu2'].value,res.params['mu3'].value]
+        sigmas=[res.params['sigma1'].value,res.params['sigma2'].value,res.params['sigma3'].value]
+        amps=[res.params['amp1'].value,res.params['amp2'].value,res.params['amp3'].value]
         
         return mus,sigmas,amps
