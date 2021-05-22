@@ -5,6 +5,8 @@ from matplotlib import cm
 
 from lmfit.models import Model
 
+from sklearn.cluster import KMeans
+
 from shapely.geometry import Polygon
 
 from radio_beam.commonbeam import getMinVolEllipse
@@ -68,7 +70,7 @@ class grainPreprocess():
     
     
     @classmethod
-    def image_preprocess(cls,image,h,k=0.5):
+    def image_preprocess(cls,image,h=135,k=1):
         #
         # комбинация медианного фильтра, биноризации и гражиента
         # у зерен значение пикселя - 0, у регионов связ. в-ва - 1,а у их границы - 2
@@ -81,6 +83,48 @@ class grainPreprocess():
         new_image=(bin_grad>0).astype('uint8')*255
 
         return new_image
+    
+    @classmethod
+    def image_preprocess_kmeans(cls,image,h=135,k=1,n_clusters=3,pos=0):
+        #
+        # выделение границ при помощи кластеризации 
+        # и выравнивание шума медианным фильтром
+        #
+        combined = cls.combine(image,h,k)
+        
+        clustered,colors = grainMorphology.kmeans_image(combined,n_clusters)
+        clustered = clustered==colors[pos]
+        clustered = np.array(clustered*255,dtype='uint8')
+        
+        new_image = filters.median(clustered,disk(5))
+        return new_image
+    
+class grainMorphology():
+    
+    @classmethod
+    def kmeans_image(cls,image,n_clusters=3):
+        #
+        # кластеризует при помощи kmeans
+        # и возвращает изображение с нанесенными цветами кластеров
+        #
+        img=image.copy()
+
+        size = img.shape
+        img = img.reshape(-1, 1)
+
+        model = KMeans(n_clusters=n_clusters)
+        clusters = model.fit_predict(img)
+
+        colors=[]
+        for i in range(n_clusters):
+            color=np.median(img[clusters == i]) # медианное значение пикселей у кластера
+            img[clusters == i] = color
+            colors.append(int(color))
+
+        img = img.reshape(size)
+        colors.sort()
+
+        return img,colors
 
 class grainFig():
     
@@ -358,6 +402,9 @@ class grainMark():
     
     @classmethod
     def get_row_contours(cls,image):
+        #
+        # возвращает набор точек контуров 
+        #
         edges = cv2.Canny(image,0,255,L2gradient=False)
 
         # направление обхода контура по часовой стрелке
@@ -369,7 +416,9 @@ class grainMark():
     
     @classmethod
     def get_contours(cls,image):
-
+        #
+        # уменьшение количества точек контура при помощи алгоритма Дугласа-Пекера
+        #
         contours=cls.get_row_contours(image)
 
         new_contours=[]
