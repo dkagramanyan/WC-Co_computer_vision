@@ -85,18 +85,19 @@ class grainPreprocess():
         return new_image
     
     @classmethod
-    def image_preprocess_kmeans(cls,image,h=135,k=1,n_clusters=3,pos=0):
+    def image_preprocess_kmeans(cls,image,h=135,k=1,n_clusters=3,pos=1):
         #
         # выделение границ при помощи кластеризации 
         # и выравнивание шума медианным фильтром
+        # pos отвечает за выбор кластера, который будет отображен на возвращенном изображении
         #
         combined = cls.combine(image,h,k)
         
         clustered,colors = grainMorphology.kmeans_image(combined,n_clusters)
-        clustered = clustered==colors[pos]
-        clustered = np.array(clustered*255,dtype='uint8')
+        cluster = clustered==colors[pos]
+        cluster = np.array(cluster*255,dtype='uint8')
         
-        new_image = filters.median(clustered,disk(5))
+        new_image = filters.median(cluster,disk(2))
         return new_image
     
 class grainMorphology():

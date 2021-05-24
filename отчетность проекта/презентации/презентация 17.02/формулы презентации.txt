@@ -1,0 +1,15 @@
+\\
+w1_{ij}= {{B_c} \over {min(B_i,B_j)}} \\
+w2_{ij}= {I_i - I_j}  \\
+w3_{ij}={min(S_i,S_j)} 
+
+\\
+w1 - T_B\\
+w2 -  T_I\\
+w3 - T_S
+
+M = 
+ \begin{cases}
+   1 \text{ if $ w1_{ij}>T_{B}$}  &\text{ $ w2_{ij}>T_{I} $ or $  w3_{ij}<T_{S}  $}\\
+   0 &\text{otherwise}
+ \end{cases}  
