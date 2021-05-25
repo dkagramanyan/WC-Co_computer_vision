@@ -529,6 +529,38 @@ class grainShow():
         plt.axis('off')
         plt.imshow(image,cmap=cmap)
         plt.show()
+        
+    @classmethod
+    def enclosing_ellipse_show(cls,image,pos=0,tolerance=0.2,N=15):
+        #
+        # рисует график точек многоугольника и описанного эллипса
+        #
+        a_beams,b_beams,angles,cetroids=grainMark.get_mvee_params(image,tolerance)
+        approx=grainMark.get_row_contours(image)
+        
+        a=a_beams[pos]
+        b=b_beams[pos]
+        angle=angles[pos]
+        print('полуось а ',a)
+        print('полуось b ',b)
+        print('угол поворота ',round(angle,3),' радиан')
+
+        cnt=np.array(approx[pos])
+
+        xp=cnt[:,0]
+        yp=cnt[:,1]
+        xc=cetroids[pos,0]
+        yc=cetroids[pos,1]
+
+        x,y= grainStats.ellipse(a,b,angle)
+
+        plt.figure(figsize=(N,N))
+        plt.plot(xp-xc,yp-yc)
+        plt.scatter(0,0)
+        plt.plot(x,y)
+
+        plt.show()
+
     
     @classmethod
     def corners_classes(cls,nodes,classes,max_num=2000,size=5,show=False): 
