@@ -18,11 +18,12 @@ from skimage import io
 from skimage.measure import EllipseModel
 from skimage.color import rgb2gray
 from skimage import filters
-from skimage.morphology import disk
+from skimage.morphology import disk,skeletonize
 from skimage.measure import approximate_polygon
 
-
 from PIL import Image, ImageDraw, ImageFilter,ImageOps
+
+from scipy import ndimage
 
 import copy
 import cv2
@@ -207,7 +208,9 @@ class grainFig():
 class grainMark():
     @classmethod
     def mark_corners_and_classes(cls,image,max_num=100000,sens=0.1,max_dist=1):
-
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         corners = cv2.goodFeaturesToTrack(image,max_num,sens, max_dist)
         corners = np.int0(corners)
         x=copy.copy(corners[:,0,1])
@@ -225,6 +228,9 @@ class grainMark():
                                              max_num=100000,
                                              sens=0.1,
                                              max_dist=1):
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         corners,classes,classes_num=cls.mark_corners_and_classes(image,max_num,sens, max_dist)
         shape=(classes_num+1,max_corners_per_class)
         nodes=np.zeros(shape,dtype='int64')
@@ -275,6 +281,11 @@ class grainMark():
     
     @classmethod
     def estimate_edges(cls,image,node,corners,position=0,radius=2):
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
+        
+        
         # вычисление расстояния и среднего значения между 
         # точкой с индексом posion и остальными точками пустоты
         v1=node[position]
@@ -295,7 +306,9 @@ class grainMark():
     
     @classmethod
     def sort_perimetr(cls,orig_image,nodes,corners,eps,radius):
-        
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         img=Image.fromarray(orig_image)
         img = ImageOps.expand(img,border=radius,fill='black')
         image=np.array(img)
@@ -366,6 +379,9 @@ class grainMark():
     
     @classmethod
     def sor_perimetr_hull(cls,image,nodes,corners,color=(51,51,51)):
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         new_nodes=np.zeros(nodes.shape,dtype='int64')
 
 
@@ -514,6 +530,26 @@ class grainMark():
 
 
         return a_beams,b_beams,angles,centroids
+    
+    @classmethod
+    def skeletons_coords(cls,image):
+        #
+        # на вход подается бинаризованное изображение
+        # создает массив индивидуальных скелетов
+        # пикселю скелета дается класс, на координатах которого он находится
+        # координаты класса определяются ndi.label
+        #
+        skeleton = np.array(skeletonize(image))
+        labels,classes_num=ndimage.label(image)
+
+        bones=[[] for i in range(classes_num+1)]
+
+        for i in range(skeleton.shape[0]):
+            for j in range(skeleton.shape[1]):
+                if skeleton[i,j]:
+                    label=labels[i,j]
+                    bones[label].append((i,j))
+        return bones
 
 
 
@@ -564,6 +600,9 @@ class grainShow():
     
     @classmethod
     def corners_classes(cls,nodes,classes,max_num=2000,size=5,show=False): 
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         node_corner_numbers=np.zeros((classes.shape[0],1))
         for i,node in enumerate(nodes):
             for corner in node:
@@ -584,7 +623,10 @@ class grainShow():
         return node_corner_numbers
     
     @classmethod
-    def classes_corners(cls,nodes,corners,max_num=2000,size=5,show=False):   
+    def classes_corners(cls,nodes,corners,max_num=2000,size=5,show=False): 
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         corner_distr=np.zeros((corners.shape[0]))
 
         for i in range(corners.shape[0]):
@@ -611,6 +653,9 @@ class grainDraw():
     
     @classmethod
     def draw_corners(cls,image,corners,color=255):
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         image=copy.copy(image)
         for i in corners:
             x, y = i.ravel()
@@ -620,6 +665,9 @@ class grainDraw():
     
     @classmethod
     def draw_edges_nodes(cls,image,nodes,corners,color=(51,51,51)):
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         new_image=copy.copy(image)
         im = Image.fromarray(np.uint8(cm.gist_earth(new_image)*255))
         draw = ImageDraw.Draw(im)
@@ -654,6 +702,9 @@ class grainDraw():
     
     @classmethod
     def draw_edges_hull(cls,image,nodes,corners,color=(51,51,51)):
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
         new_image=copy.copy(image)
         im = Image.fromarray(np.uint8(cm.gist_earth(new_image)*255))
         draw = ImageDraw.Draw(im)
@@ -693,6 +744,7 @@ class grainDraw():
     def draw_edges(cls,image,cnts,color=(50,50,50)):
         #
         # рисует на изображении линии по точкам контура cnts
+        # линии в стиле x^1->x^2,x^2->x^3 и тд
         #
         new_image=copy.copy(image)
         im = Image.fromarray(np.uint8(cm.gist_earth(new_image)*255))
@@ -719,8 +771,62 @@ class grainDraw():
         img=np.array(im)
 
         return  img
+    
+    @classmethod
+    def draw_tree(cls,image,centres=False,leafs=False,nodes=False,bones=False):
+        #
+        # на вход подается биноризованное изображение
+        # рисует на инвертированном изображении
+        # скелет и точки центров, листьев, узлов и пикселей скелета
+        #
+        skeleton = np.array(skeletonize(image))*255
+        im=1-image+skeleton
+        im = Image.fromarray(np.uint8(cm.gist_earth(im)*255))
+        draw = ImageDraw.Draw(im)
+        
+        
+        if bones:
+            for j,bone in enumerate(bones):
+                for i,point in enumerate(bone):
+                    x2,y2=point
+                    r=1
+                    draw.ellipse((y2-r,x2-r,y2+r,x2+r), fill=(89,34,0), width=5) 
+        
+        if centres:
+            for j,point in enumerate(centres):
+                x2,y2=point
+                r=2
+                draw.ellipse((y2-r,x2-r,y2+r,x2+r), fill=(255,0,0), width=5)
+
+        if leafs:
+            for j,leaf in enumerate(leafs):
+                for i,point in enumerate(leaf):
+                    x2,y2=point
+                    r=2
+                    draw.ellipse((y2-r,x2-r,y2+r,x2+r), fill=(0,255,0), width=5)
+        if nodes:
+            for j,node in enumerate(nodes):
+                for i,point in enumerate(node):
+                    x2,y2=point
+                    r=2
+                    draw.ellipse((y2-r,x2-r,y2+r,x2+r), fill=(0,0,255), width=10)
+
+        return np.array(im)
         
 class grainStats():
+    @classmethod
+    def kernel_points(cls,image,point,step=1):
+        #
+        # возвращает координаты пикселей матрицы,
+        # центр которой это point
+        #
+        x,y=point
+        coords=[]
+        for xi in range(x-step,x+step+1):
+            for yi in range(y-step,y+step+1):
+                if xi<image.shape[0] and yi<image.shape[1]:
+                        coords.append((xi,yi))
+        return coords
     
     @classmethod
     def stats_preprocess(cls,array,step):
