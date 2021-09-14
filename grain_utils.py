@@ -37,10 +37,12 @@ class grainPreprocess():
         #
         # возвращает левую или правую часть полученного изображения
         #
-        width,height = image.size
+        height,width = image.shape
         sides={'left':0,'right':1}
-        shape=[(0,0,width//2,height-h),(width//2,0,width,height-h)]
-        return image.crop(shape[sides[side]])
+        shapes=[(0,height-h,0,width//2),(0,height-h,width//2,width)]
+        shape=shapes[sides[side]]
+
+        return image[shape[0]:shape[1],shape[2]:shape[3]]
     
     @classmethod
     def combine(cls,image,h,k=0.5): 
