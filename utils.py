@@ -775,12 +775,15 @@ class grainDraw():
         return  img
     
     @classmethod
-    def draw_tree(cls,image,centres=False,leafs=False,nodes=False,bones=False):
+    def draw_tree(cls,img,centres=False,leafs=False,nodes=False,bones=False):
         #
         # на вход подается биноризованное изображение
         # рисует на инвертированном изображении
         # скелет и точки центров, листьев, узлов и пикселей скелета
         #
+        
+        image=img.copy()/255
+            
         skeleton = np.array(skeletonize(image))*255
         im=1-image+skeleton
         im = Image.fromarray(np.uint8(cm.gist_earth(im)*255))
