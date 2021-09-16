@@ -428,7 +428,7 @@ class grainMark():
 
         # направление обхода контура по часовой стрелке
         contours,_ = cv2.findContours( edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
-        contours=np.array(contours)
+
         for i,cnt in enumerate(contours):
             contours[i]=cnt[:,0]
         return contours
@@ -514,10 +514,10 @@ class grainMark():
 
                 data=getMinVolEllipse(points,tol)
 
-                data=np.array(data)
+                
                 xc,yc=data[0][0]
                 a,b=data[1]
-                sin=data[2][0,1]
+                sin=data[2][0][1]
                 angle=-np.arcsin(sin)
 
                 a_beams.append(a)
