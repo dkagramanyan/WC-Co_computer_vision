@@ -440,6 +440,11 @@ class grainMark():
 
     @classmethod
     def get_row_contours(cls, image):
+        """
+        :param image: ndarray (width, height,3)
+        :return: list (N_contours,M_points,2)
+            where ndarray (M_points,2)
+        """
         #
         # возвращает набор точек контуров 
         #
@@ -454,6 +459,11 @@ class grainMark():
 
     @classmethod
     def get_contours(cls, image):
+        """
+        :param image: ndarray (width, height,3)
+        :return: list (N_contours,M_points,2)
+            where ndarray (M_points,2)
+        """
         #
         # уменьшение количества точек контура при помощи алгоритма Дугласа-Пекера
         #
