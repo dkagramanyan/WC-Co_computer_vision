@@ -9,6 +9,7 @@ __pycache__/
 /.dvc/*
 
 /images/*
+/documents/*
 
 # Distribution / packaging
 .Python
