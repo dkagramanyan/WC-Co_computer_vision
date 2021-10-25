@@ -10,6 +10,10 @@ __pycache__/
 
 /images/*
 /documents/*
+/original_sem/*
+/data/*
+/saved np/all_images.npy
+/abstracts/*
 
 # Distribution / packaging
 .Python
