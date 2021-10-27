@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 from matplotlib import pyplot as plt
 from matplotlib import cm
@@ -22,6 +23,8 @@ from skimage.morphology import disk, skeletonize
 from skimage.measure import approximate_polygon
 
 from PIL import Image, ImageDraw, ImageFilter, ImageOps
+
+from sklearn.linear_model import LinearRegression
 
 from scipy import ndimage
 
@@ -601,7 +604,7 @@ class grainStats():
 class grainApprox():
 
     @classmethod
-    def gaussian_fit(cls, y, x, mu=1, sigma=1, amp=1):
+    def gaussian_fit(cls, x, y, mu=1, sigma=1, amp=1):
         #
         # аппроксимация заданных точек нормальной функцией
         #
@@ -615,7 +618,7 @@ class grainApprox():
         return mu, sigma, amp
 
     @classmethod
-    def gaussian_fit_bimodal(cls, y, x, mu1=100, mu2=240, sigma1=30, sigma2=30, amp1=1, amp2=1):
+    def gaussian_fit_bimodal(cls, x, y, mu1=100, mu2=240, sigma1=30, sigma2=30, amp1=1, amp2=1):
         #
         # аппроксимация заданных точек бимодальной нормальной функцией
         #
@@ -629,7 +632,7 @@ class grainApprox():
         return mus, sigmas, amps
 
     @classmethod
-    def gaussian_fit_termodal(cls, y, x, mu1=10, mu2=100, mu3=240, sigma1=10, sigma2=30, sigma3=30, amp1=1, amp2=1,
+    def gaussian_fit_termodal(cls, x, y, mu1=10, mu2=100, mu3=240, sigma1=10, sigma2=30, sigma3=30, amp1=1, amp2=1,
                               amp3=1):
         #
         # аппроксимация заданных точек термодальной нормальной функцией
@@ -643,6 +646,111 @@ class grainApprox():
         amps = [res.params['amp1'].value, res.params['amp2'].value, res.params['amp3'].value]
 
         return mus, sigmas, amps
+
+    @classmethod
+    def lin_regr_approx(cls, x, y):
+        #
+        # аппроксимация распределения линейной функцией
+        # и создание графика по параметрам распределения
+        #
+        x_pred = np.linspace(x.min(axis=0), x.max(axis=0), 50)
+
+        reg = LinearRegression().fit(x, y)
+        y_pred = reg.predict(x_pred)
+
+        k = reg.coef_[0][0]
+        b = reg.predict([[0]])[0][0]
+
+        angle = np.rad2deg(np.arctan(k))
+        score = reg.score(x, y)
+
+        return (x_pred, y_pred), k, b, angle, score
+
+    @classmethod
+    def bimodal_gauss_approx(cls, x, y):
+        #
+        # аппроксимация распределения бимодальным гауссом
+        #
+
+        mus, sigmas, amps = cls.gaussian_fit_bimodal(y, x)
+
+        x_gauss = np.arange(0, 361)
+        y_gauss = grainStats.gaussian_bimodal(x_gauss, mus[0], mus[1], sigmas[0], sigmas[1], amps[0], amps[1])
+
+        return (x_gauss, y_gauss), mus, sigmas, amps
+
+
+class grainGenerate():
+    @classmethod
+    def angles_legend(cls, name, itype, step, mus, sigmas, amps, norm, ):
+        #
+        # создание легенды распределения углов
+        #
+
+        mu1 = round(mus[0], 2)
+        sigma1 = round(sigmas[0], 2)
+        amp1 = round(amps[0], 2)
+
+        mu2 = round(mus[1], 2)
+        sigma2 = round(sigmas[1], 2)
+        amp2 = round(amps[1], 2)
+
+        val = round(norm, 4)
+
+        border = '--------------\n'
+        total_number = '\n количество углов ' + str(val)
+        text_angle = '\n шаг угла ' + str(step) + ' градусов'
+
+        moda1 = '\n mu1 = ' + str(mu1) + ' sigma1 = ' + str(sigma1) + ' amp1 = ' + str(amp1)
+        moda2 = '\n mu2 = ' + str(mu2) + ' sigma2 = ' + str(sigma2) + ' amp2 = ' + str(amp2)
+
+        legend = border + name + ' ' + itype + total_number + text_angle + moda1 + moda2
+
+        return legend
+
+    @classmethod
+    def angles_approx_save(cls, folder, images, names, types, step, save=False):
+        #
+        # вывод распределения углов для всех фотографий одного образца
+        #
+
+        texts = []
+        xy_scatter = []
+        xy_gauss = []
+
+        if not os.path.exists(folder):
+            os.mkdir(folder)
+
+        for i, images_list in enumerate(images):
+            all_original_angles = []
+
+            for j, image in enumerate(images_list):
+                original_angles = grainMark.get_angles(image)
+
+                for angle in original_angles:
+                    all_original_angles.append(angle)
+
+            angles, angles_set, dens_curve = grainStats.stats_preprocess(all_original_angles, step)
+
+            x = angles_set.astype(np.float64)
+            y = dens_curve
+
+            norm = np.sum(y)
+            y = y / norm
+
+            (x_gauss, y_gauss), mus, sigmas, amps = grainApprox.bimodal_gauss_approx(x, y)
+
+            text = cls.angles_legend(names[i], types[i], step, mus, sigmas, amps, norm)
+
+            xy_gauss.append((x_gauss, y_gauss))
+            xy_scatter.append((x, y))
+
+            texts.append(text)
+
+        if save:
+            np.save(f'{folder}/xy_scatter_step_{step}.npy', np.array(xy_scatter, dtype=object))
+            np.save(f'{folder}/xy_gauss_step_{step}.npy', np.array(xy_gauss))
+            np.save(f'{folder}/texts_step_{step}.npy', np.array(texts))
 
 
 class grainDeprecated():
