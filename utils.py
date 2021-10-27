@@ -136,6 +136,28 @@ class grainPreprocess():
         new_image = filters.median(cluster, disk(2))
         return new_image
 
+    @classmethod
+    def read_preprocess_data(cls, images_dir, images_num_per_class=100, preprocess=False, save=False,
+                             save_name='all_images.npy'):
+        folders_names = os.listdir(images_dir)
+        images_paths_raw = [os.listdir(images_dir + '/' + folder) for folder in folders_names]
+
+        images_paths = []
+        all_images = []
+        for i, folder in enumerate(images_paths_raw):
+            images_paths.append([])
+            for image_path in folder:
+                images_paths[i].append(images_dir + '/' + folders_names[i] + '/' + image_path)
+
+        for images_folder in images_paths:
+            images = [io.imread(name) for i, name in enumerate(images_folder) if i < images_num_per_class]
+            if preprocess:
+                images = [grainPreprocess.image_preprocess(image) for image in images]
+            all_images.append(images)
+        if save:
+            np.save(save_name, all_images)
+        return all_images
+
 
 class grainMorphology():
 
@@ -672,7 +694,7 @@ class grainApprox():
         # аппроксимация распределения бимодальным гауссом
         #
 
-        mus, sigmas, amps = cls.gaussian_fit_bimodal(y, x)
+        mus, sigmas, amps = cls.gaussian_fit_bimodal(x, y)
 
         x_gauss = np.arange(0, 361)
         y_gauss = grainStats.gaussian_bimodal(x_gauss, mus[0], mus[1], sigmas[0], sigmas[1], amps[0], amps[1])
@@ -682,7 +704,7 @@ class grainApprox():
 
 class grainGenerate():
     @classmethod
-    def angles_legend(cls, name, itype, step, mus, sigmas, amps, norm, ):
+    def angles_legend(cls, images_amount, name, itype, step, mus, sigmas, amps, norm, ):
         #
         # создание легенды распределения углов
         #
@@ -699,17 +721,27 @@ class grainGenerate():
 
         border = '--------------\n'
         total_number = '\n количество углов ' + str(val)
+        images_number = '\n количество снимков ' + str(images_amount)
         text_angle = '\n шаг угла ' + str(step) + ' градусов'
 
         moda1 = '\n mu1 = ' + str(mu1) + ' sigma1 = ' + str(sigma1) + ' amp1 = ' + str(amp1)
         moda2 = '\n mu2 = ' + str(mu2) + ' sigma2 = ' + str(sigma2) + ' amp2 = ' + str(amp2)
 
-        legend = border + name + ' ' + itype + total_number + text_angle + moda1 + moda2
+        legend = border + name + ' ' + itype + total_number + images_number + text_angle + moda1 + moda2
 
         return legend
 
     @classmethod
     def angles_approx_save(cls, folder, images, names, types, step, save=False):
+        """
+        :param folder: str path to dir
+        :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
+        :param names: list str [class_name1,class_name2,..]
+        :param types: list str [class_type1,class_type2,..]
+        :param step: scalar int [0,N]
+        :param save: bool
+        :return: ndarray uint8 (n_classes,n_samples, height, width)
+        """
         #
         # вывод распределения углов для всех фотографий одного образца
         #
@@ -740,7 +772,7 @@ class grainGenerate():
 
             (x_gauss, y_gauss), mus, sigmas, amps = grainApprox.bimodal_gauss_approx(x, y)
 
-            text = cls.angles_legend(names[i], types[i], step, mus, sigmas, amps, norm)
+            text = grainGenerate.angles_legend(len(images_list), names[i], types[i], step, mus, sigmas, amps, norm)
 
             xy_gauss.append((x_gauss, y_gauss))
             xy_scatter.append((x, y))

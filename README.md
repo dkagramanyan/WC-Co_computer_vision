@@ -1,3 +1,26 @@
+### Расположение снимков
+Расположение исходных снимков и предобработанных снимков должно выглядеть следующим образом
+
+```
+project
+│
+└───images_folder
+   │
+   └───class1_images
+   │       image1
+   │       image2
+   │       ...
+   └───class2_images
+   │       image1
+   │       image2
+   │       ...
+   └───class3_images
+   │       image1
+   │       image2
+   │       ...
+
+```
+
 ### Предобработка изображений
 
 Для явного выделения границ фаз WC/Co используется последовательное применение следующиих алгоритом
@@ -26,10 +49,17 @@
 
 * 2 - граница региона Co, смежного с зернами WC. Толщина границы - 1 пиксель
 
-Пример использования:
+Обработка одного снимка
 
         img=io.imread(img_path)
         img=grainPreprocess.image_preprocess(img,h,k)
+
+Обработка всего датасета снимков 
+
+        all_images=grainPreprocess.read_preprocess_data(images_folder_path,
+                                                        images_num_per_class=150,
+                                                        preprocess=True,
+                                                        save=True)
 
 ### Определение углов у регионов Co
 
