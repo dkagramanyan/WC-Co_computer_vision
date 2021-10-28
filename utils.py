@@ -302,8 +302,9 @@ class grainMark():
         return contours
 
     @classmethod
-    def get_contours(cls, image):
+    def get_contours(cls, image, tol=3):
         """
+        :param tol:
         :param image: ndarray (width, height,3)
         :return: list (N_contours,M_points,2)
             where ndarray (M_points,2)
@@ -315,8 +316,8 @@ class grainMark():
 
         new_contours = []
         for j, cnt in enumerate(contours):
-            if len(cnt) > 1:
-                coords = approximate_polygon(cnt, tolerance=3)
+            if len(cnt) > 2:
+                coords = approximate_polygon(cnt, tolerance=tol)
                 new_contours.append(coords)
             else:
                 continue
@@ -324,42 +325,50 @@ class grainMark():
         return new_contours
 
     @classmethod
-    def get_angles(cls, image):
+    def get_angles(cls, image, thr=5):
         #
         # считаем углы с направлением обхода контура против часовой стрелки, углы >180 градусов учитываются
         #
-        approx = cls.get_contours(image)
+        approx = cls.get_contours(image, tol=4)
 
         # вычисление угла
         angles = []
         for k, cnt in enumerate(approx):
-            l = len(cnt)
-            if l > 2:
-                for i in range(l)[1:l - 1]:
+            if len(cnt) > 2:
+                for i, point in enumerate(cnt[:-1]):
                     point1 = cnt[i - 1]
                     point2 = cnt[i]
                     point3 = cnt[i + 1]
                     x1, y1 = point1[1], point1[0]
                     x2, y2 = point2[1], point2[0]
                     x3, y3 = point3[1], point3[0]
+                    # убирает контуры у границ
 
-                    v1 = np.array((x1 - x2, y1 - y2)).reshape(1, 2)
-                    v2 = np.array((x3 - x2, y3 - y2)).reshape(1, 2)
+                    if abs(x2 - image.shape[0] - 1) > thr and \
+                            abs(y2 - image.shape[1] - 1) > thr and \
+                            x2 > thr and y2 > thr:
+                        v1 = np.array((x1 - x2, y1 - y2)).reshape(1, 2)
+                        v2 = np.array((x3 - x2, y3 - y2)).reshape(1, 2)
 
-                    dot = np.dot(v1[0], v2[0])
-                    dist1 = np.linalg.norm(v1[0])
-                    dist2 = np.linalg.norm(v2[0])
-                    cos = dot / (dist1 * dist2)
+                        dot = np.dot(v1[0], v2[0])
+                        dist1 = np.linalg.norm(v1[0])
+                        dist2 = np.linalg.norm(v2[0])
+                        cos = dot / (dist1 * dist2)
 
-                    v = np.concatenate([v1, v2])
-                    det = np.linalg.det(v)
+                        v = np.concatenate([v1, v2])
+                        det = np.linalg.det(v)
 
-                    if abs(cos) < 1:
-                        ang = int(np.arccos(cos) * 180 / np.pi)
-                        if det < 0:
-                            angles.append(ang)
+                        if abs(cos) < 1:
+                            ang = int(np.arccos(cos) * 180 / np.pi)
+                            if det < 0:
+                                angles.append(ang)
+                            else:
+                                angles.append(360 - ang)
                         else:
-                            angles.append(360 - ang)
+                            if det < 0:
+                                angles.append(360)
+                            else:
+                                angles.append(0)
 
         return np.array(angles)
 
