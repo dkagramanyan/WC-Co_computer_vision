@@ -1,0 +1,4 @@
+[core]
+    remote = pobedit_drive
+['remote "pobedit_drive"']
+    url = gdrive://10uCgJIZ3ppEkoak2xvnujxjJoL6DCfD6

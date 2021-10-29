@@ -134,3 +134,5 @@ dmypy.json
 .pyre/
 
 /отчетность проекта/заметка жэтв/pobedit(3) BBS.doc
+/data
+/original_sem
