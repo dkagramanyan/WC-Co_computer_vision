@@ -15,6 +15,7 @@ __pycache__/
 /saved np/all_images.npy
 /abstracts/*
 /plots/*
+/saved np/*
 
 # Distribution / packaging
 .Python
