@@ -99,4 +99,4 @@ project
  
  Архитектура:
  
- ![pipeline](images/model%20pipeline.svg)
+ ![pipeline](https://drive.google.com/file/d/14-KxRV8ZdljLHcCqkZpT_N7x3Or1ZB8B/view?usp=sharing)
