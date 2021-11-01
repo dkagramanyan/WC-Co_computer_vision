@@ -137,7 +137,7 @@ class grainPreprocess():
         return new_image
 
     @classmethod
-    def read_preprocess_data(cls, images_dir, images_num_per_class=100, preprocess=False, save=False,
+    def read_preprocess_data(cls, images_dir, images_num_per_class=100, preprocess=False, save=False, resize=False,
                              save_name='all_images.npy'):
         folders_names = os.listdir(images_dir)
         images_paths_raw = [os.listdir(images_dir + '/' + folder) for folder in folders_names]
@@ -153,6 +153,9 @@ class grainPreprocess():
             images = [io.imread(name) for i, name in enumerate(images_folder) if i < images_num_per_class]
             if preprocess:
                 images = [grainPreprocess.image_preprocess(image) for image in images]
+            if not preprocess and resize:
+                images = [grainPreprocess.combine(image, h=135) for image in images]
+
             all_images.append(images)
         if save:
             np.save(save_name, all_images)
