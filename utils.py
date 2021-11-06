@@ -1032,55 +1032,55 @@ class grainDeprecated():
         return corner_distr
 
 
-@classmethod
-def draw_corners(cls, image, corners, color=255):
-    #
-    # НЕТ ГАРАНТИИ РАБОТЫ
-    #
-    image = copy.copy(image)
-    for i in corners:
-        x, y = i.ravel()
-        cv2.circle(image, (x, y), 3, color, -1)
+    @classmethod
+    def draw_corners(cls, image, corners, color=255):
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
+        image = copy.copy(image)
+        for i in corners:
+            x, y = i.ravel()
+            cv2.circle(image, (x, y), 3, color, -1)
 
-    return image
+        return image
 
 
-@classmethod
-def draw_edges_nodes(cls, image, nodes, corners, color=(51, 51, 51)):
-    #
-    # НЕТ ГАРАНТИИ РАБОТЫ
-    #
-    new_image = copy.copy(image)
-    im = Image.fromarray(np.uint8(cm.gist_earth(new_image) * 255))
-    draw = ImageDraw.Draw(im)
-    for j, node in enumerate(nodes):
-        if len(node) > 1:
-            #   print('i=',j)
-            #    print(node)
-            point1 = corners[node[0]][0]
-            x1, y1 = point1[0], point1[1]
+    @classmethod
+    def draw_edges_nodes(cls, image, nodes, corners, color=(51, 51, 51)):
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        #
+        new_image = copy.copy(image)
+        im = Image.fromarray(np.uint8(cm.gist_earth(new_image) * 255))
+        draw = ImageDraw.Draw(im)
+        for j, node in enumerate(nodes):
+            if len(node) > 1:
+                #   print('i=',j)
+                #    print(node)
+                point1 = corners[node[0]][0]
+                x1, y1 = point1[0], point1[1]
 
-            x_start, y_start = point1[0], point1[1]
-            r1 = 5
-            r = 3
-            draw.ellipse((y1 - r1, x1 - r1, y1 + r1, x1 + r1), fill=color, width=10)
-            len_node = node[-1]
-            #     print(node[:len_node])
-            for i, point in enumerate(node[: len_node]):
-                point2 = corners[point][0]
-                x2, y2 = point2[0], point2[1]
+                x_start, y_start = point1[0], point1[1]
+                r1 = 5
+                r = 3
+                draw.ellipse((y1 - r1, x1 - r1, y1 + r1, x1 + r1), fill=color, width=10)
+                len_node = node[-1]
+                #     print(node[:len_node])
+                for i, point in enumerate(node[: len_node]):
+                    point2 = corners[point][0]
+                    x2, y2 = point2[0], point2[1]
 
-                draw.ellipse((y2 - r, x2 - r, y2 + r, x2 + r), fill=color, width=4)
-                draw.line((y1, x1, y2, x2), fill=color, width=4)
-                x1, y1 = x2, y2
+                    draw.ellipse((y2 - r, x2 - r, y2 + r, x2 + r), fill=color, width=4)
+                    draw.line((y1, x1, y2, x2), fill=color, width=4)
+                    x1, y1 = x2, y2
 
-            draw.line((y_start, x_start, y1, x1), fill=(100, 100, 100), width=4)
-        else:
-            continue
+                draw.line((y_start, x_start, y1, x1), fill=(100, 100, 100), width=4)
+            else:
+                continue
 
-    img = np.array(im)
+        img = np.array(im)
 
-    return img
+        return img
 
     @classmethod
     def draw_edges_hull(cls, image, nodes, corners, color=(51, 51, 51)):
