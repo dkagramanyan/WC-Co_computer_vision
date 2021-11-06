@@ -7,6 +7,7 @@ __pycache__/
 *.so
 /.idea/*
 /.dvc/*
+/grain_generator/*
 
 /images/*
 /documents/*
@@ -142,4 +143,3 @@ dmypy.json
 /plots/
 /saved np/
 /tasks/
-/documents/
