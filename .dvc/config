@@ -1,0 +1,8 @@
+[core]
+    remote = pobedit_drive
+[cache]
+    dir = cache
+    shared = group
+    type = symlink
+['remote "pobedit_drive"']
+    url = gdrive://1VVfkAMAZL2A1hvpEM6qsZDpgpCshspAF
