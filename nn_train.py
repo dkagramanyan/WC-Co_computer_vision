@@ -23,8 +23,8 @@ image_shape = (1024, 1024, 1)
 inputs = tf.keras.Input(shape=image_shape)
 net = U2NET(1)
 out = net(inputs)
-net.built = True
-net.load_weights('data/saved_models/u2net_loss=0.0089.h5')
+# net.built = True
+# net.load_weights('data/saved_models/u2net_loss=0.0089.h5')
 
 model = tf.keras.Model(inputs=inputs, outputs=out[0], name='u2netmodel')
 
