@@ -2,7 +2,9 @@
 /.idea/*
 /.dvc/*
 /data/*
+!/.dvc/config
 
 /.ipynb_checkpoints/*
 /__pycache__/*
-/data
+
+
