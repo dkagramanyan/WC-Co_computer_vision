@@ -3,13 +3,10 @@ import numpy as np
 import datetime
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from matplotlib import pyplot as plt
-import time
-from skimage import transform
-from umap import UMAP
+
 import csv
 import os
-from skimage.metrics import structural_similarity as ssim
+
 
 all_images = np.load('data/saved np/all_images_no_preprocess.npy', allow_pickle=True)
 all_images_rgb = []
