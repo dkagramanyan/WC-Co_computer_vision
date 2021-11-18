@@ -2,6 +2,7 @@
 #SBATCH --job-name=autoencoder_train
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task 6
+#SBATCH --constraint="type_c"
 
 module load Python/Anaconda_v10.2019
 

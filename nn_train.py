@@ -30,7 +30,7 @@ model = tf.keras.Model(inputs=inputs, outputs=out[0], name='u2netmodel')
 
 x_train, x_test, y_train, y_test = train_test_split(all_images_rgb, all_images_rgb, test_size=0.2)
 
-optim = tf.keras.optimizers.RMSprop(learning_rate=0.0001, rho=0.9, momentum=0.1, epsilon=1e-07, centered=True)
+optim = tf.keras.optimizers.RMSprop(learning_rate=0.0005, rho=0.9, momentum=0.1, epsilon=1e-07, centered=True)
 
 # train
 
@@ -57,7 +57,7 @@ csv_logger = tf.keras.callbacks.CSVLogger(csv_log_filepath)
 model.compile(optimizer=optim, loss='mse', metrics=['MAE'])
 history = model.fit(x_train, y_train,
                     epochs=50,
-                    batch_size=2,
+                    batch_size=3,
                     shuffle=True,
                     validation_data=(x_test, x_test),
                     callbacks=[tensorboard_callback,
