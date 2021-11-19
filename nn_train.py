@@ -62,7 +62,7 @@ if not os.path.exists(csv_log_path):
     os.makedirs(csv_log_path)
 
 if not os.path.exists(csv_log_filepath):
-    with open(csv_log_filepath) as csvfile:
+    with open(csv_log_filepath,'wb') as csvfile:
         filewriter = csv.writer(csvfile, delimiter=',',
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
