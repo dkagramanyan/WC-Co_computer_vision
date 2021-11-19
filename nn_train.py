@@ -44,10 +44,11 @@ image_shape = (1024, 1024, 1)
 inputs = tf.keras.Input(shape=image_shape)
 net = U2NET(1)
 out = net(inputs)
-# net.built = True
-# net.load_weights('data/saved_models/u2net_loss=0.0089.h5')
 
 model = tf.keras.Model(inputs=inputs, outputs=out[0], name='u2netmodel')
+model.built = True
+model.load_weights('data/logs/u2net_2021-11-19_checkpoint/checkpoints/')
+
 
 x_train, x_test, y_train, y_test = train_test_split(all_images_rgb, all_images_rgb, test_size=0.2)
 
@@ -68,7 +69,7 @@ if not os.path.exists(csv_log_filepath):
 
 
 
-optim=tf.keras.optimizers.RMSprop(learning_rate=0.00015, rho=0.9, momentum=0.1, epsilon=1e-07, centered=True)
+optim=tf.keras.optimizers.RMSprop(learning_rate=0.000015, rho=0.9, momentum=0.1, epsilon=1e-07, centered=True)
 
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
