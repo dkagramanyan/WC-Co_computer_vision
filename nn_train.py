@@ -59,7 +59,7 @@ csv_log_filepath= csv_log_path+f'{name}.csv'
 images_save_dir=f'data/logs/{name}_val_images/'
 
 if not os.path.exists(csv_log_filepath):
-    os.makedirs(csv_log_filepath)
+    os.makedirs(csv_log_path)
 
 if not os.path.exists(csv_log_filepath):
     with open(csv_log_filepath) as csvfile:
