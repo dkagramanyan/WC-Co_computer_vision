@@ -49,7 +49,7 @@ out = net(inputs)
 
 model = tf.keras.Model(inputs=inputs, outputs=out[0], name='u2netmodel')
 
-x_train, x_test, y_train, y_test = train_test_split(all_images_rgb[:10], all_images_rgb[:10], test_size=0.2)
+x_train, x_test, y_train, y_test = train_test_split(all_images_rgb, all_images_rgb, test_size=0.2)
 
 name=f'u2net_{datetime.datetime.now().date()}'
 log_dir=f'data/logs/{name}_tensorboard/'
@@ -58,7 +58,7 @@ csv_log_path= f'data/logs/train_csv/'
 csv_log_filepath= csv_log_path+f'{name}.csv'
 images_save_dir=f'data/logs/{name}_val_images/'
 
-if not os.path.exists(csv_log_filepath):
+if not os.path.exists(csv_log_path):
     os.makedirs(csv_log_path)
 
 if not os.path.exists(csv_log_filepath):
