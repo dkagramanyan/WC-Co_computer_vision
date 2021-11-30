@@ -3,7 +3,7 @@
 [cache]
     dir = cache
     shared = group
-    type = symlink
+    type = copy
 ['remote "pobedit_drive"']
     url = gdrive://1VVfkAMAZL2A1hvpEM6qsZDpgpCshspAF
 ['remote "pobedit"']
