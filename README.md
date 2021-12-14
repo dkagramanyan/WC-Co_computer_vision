@@ -1,3 +1,9 @@
+wc-cv
+=====
+
+Tools for analisys of WC-Co's microstructure SEM images. Only SEM images will be processed, no EBSD. 
+
+
 ### Расположение снимков
 Расположение исходных снимков и предобработанных снимков должно выглядеть следующим образом
 
