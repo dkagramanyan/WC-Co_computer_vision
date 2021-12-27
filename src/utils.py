@@ -31,13 +31,13 @@ from scipy import ndimage
 import copy
 import cv2
 
-from pathlib import Path
-
 from scipy.spatial import ConvexHull
 
 import sys
 import logging
 from logging import StreamHandler, Formatter
+
+from src.cfg import CfgAnglesNames, CfgBeamsNames, CfgDataset
 
 handler = StreamHandler(stream=sys.stdout)
 handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
@@ -782,7 +782,7 @@ class grainGenerate():
         return legend
 
     @classmethod
-    def angles_approx_save(cls, folder, images, names, types, step, save=False):
+    def angles_approx_save(cls, folder, images, names, types, step, save=True):
         """
         :param folder: str path to dir
         :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
@@ -799,6 +799,7 @@ class grainGenerate():
         texts = []
         xy_scatter = []
         xy_gauss = []
+        xy_gauss_data = []
 
         if not os.path.exists(folder):
             os.mkdir(folder)
@@ -826,13 +827,18 @@ class grainGenerate():
 
             xy_gauss.append((x_gauss, y_gauss))
             xy_scatter.append((x, y))
+            xy_gauss_data.append((
+                (mus[0], sigmas[0], amps[0]),
+                (mus[1], sigmas[1], amps[1])
+            ))
 
             texts.append(text)
 
         if save:
-            np.save(f'{folder}/xy_scatter_step_{step}.npy', np.array(xy_scatter, dtype=object))
-            np.save(f'{folder}/xy_gauss_step_{step}.npy', np.array(xy_gauss))
-            np.save(f'{folder}/texts_step_{step}.npy', np.array(texts))
+            np.save(f'{folder}/' + CfgAnglesNames.values + f'{step}.npy', np.array(xy_scatter, dtype=object))
+            np.save(f'{folder}/' + CfgAnglesNames.approx + f'{step}.npy', np.array(xy_gauss))
+            np.save(f'{folder}/' + CfgAnglesNames.approx_data + f'{step}.npy', np.array(xy_gauss_data))
+            np.save(f'{folder}/' + CfgAnglesNames.legend + f'{step}.npy', np.array(texts))
 
     @classmethod
     def beams_legend(cls, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
@@ -852,7 +858,7 @@ class grainGenerate():
         return legend
 
     @classmethod
-    def diametr_approx_save(cls, folder, images, names, types, step, pixel, start=2, end=-3, save=False, debug=False):
+    def diametr_approx_save(cls, folder, images, names, types, step, pixel, start=2, end=-3, save=True, debug=False):
         #
         # вывод распределения длин а- и б- полуосей для разных образцов
         #
@@ -918,7 +924,7 @@ class grainGenerate():
             ))
 
         if save:
-            np.save(f'{folder}/xy_scatter_beams_step_{step}.npy', np.array(xy_scatter, dtype=object))
-            np.save(f'{folder}/xy_linear_beams_step_{step}.npy', np.array(xy_linear))
-            np.save(f'{folder}/xy_linear_data_beams_step_{step}.npy', np.array(xy_linear_data))
-            np.save(f'{folder}/texts_beams_step_{step}.npy', np.array(texts))
+            np.save(f'{folder}/' + CfgBeamsNames.values + f'{step}.npy', np.array(xy_scatter, dtype=object))
+            np.save(f'{folder}/' + CfgBeamsNames.approx + f'{step}.npy', np.array(xy_linear))
+            np.save(f'{folder}/' + CfgBeamsNames.approx_data + f'{step}.npy', np.array(xy_linear_data))
+            np.save(f'{folder}/' + CfgBeamsNames.legend + f'{step}.npy', np.array(texts))
