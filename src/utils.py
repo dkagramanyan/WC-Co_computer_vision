@@ -31,7 +31,21 @@ from scipy import ndimage
 import copy
 import cv2
 
+from pathlib import Path
+
 from scipy.spatial import ConvexHull
+
+import sys
+import logging
+from logging import StreamHandler, Formatter
+
+handler = StreamHandler(stream=sys.stdout)
+handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
+
+logger = logging.getLogger(__name__)
+logger.addHandler(handler)
+
+file_path = os.getcwd() + '/utils.py'
 
 
 class grainPreprocess():
@@ -404,6 +418,7 @@ class grainMark():
         b_beams = []
         angles = []
         centroids = []
+
         for i, cnt in enumerate(approx):
             if len(cnt) > 2:
                 cnt = np.array(cnt)
@@ -414,7 +429,6 @@ class grainMark():
 
                 x_norm, y_norm = points.mean(axis=0)
                 points = (points - (x_norm, y_norm))
-
                 data = getMinVolEllipse(points, tol)
 
                 xc, yc = data[0][0]
@@ -819,3 +833,92 @@ class grainGenerate():
             np.save(f'{folder}/xy_scatter_step_{step}.npy', np.array(xy_scatter, dtype=object))
             np.save(f'{folder}/xy_gauss_step_{step}.npy', np.array(xy_gauss))
             np.save(f'{folder}/texts_step_{step}.npy', np.array(texts))
+
+    @classmethod
+    def beams_legend(cls, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
+        #
+        # создание легенды для распределения длин полуосей
+        #
+        border = '--------------'
+        tp = '\n ' + name + ' тип ' + itype
+        num = '\n регионы Co ' + str(norm) + ' шт'
+        lin_k = '\n k наклона ' + str(round((k), 3)) + ' сдвиг b ' + str(round(b, 3))
+        lin_k_angle = '\n угол наклона $' + str(round(angle, 3)) + '^{\circ}$'
+        acc = '\n точность ' + str(round(score, 2))
+        text_step = '\n шаг длины ' + str(dist_step) + '$ мкм$'
+        mean_text = '\n средняя длина ' + str(round(dist_mean, 2))
+        legend = border + tp + lin_k + lin_k_angle + acc + num + text_step + mean_text
+
+        return legend
+
+    @classmethod
+    def diametr_approx_save(cls, folder, images, names, types, step, pixel, start=2, end=-3, save=False, debug=False):
+        #
+        # вывод распределения длин а- и б- полуосей для разных образцов
+        #
+        texts = []
+        xy_scatter = []
+        xy_linear = []
+        xy_linear_data = []
+
+        for i, images_list in enumerate(images):
+            all_a_beams = []
+            all_b_beams = []
+
+            for j, image in enumerate(images_list):
+                try:
+                    a_beams, b_beams, angles, cetroids = grainMark.get_mvee_params(image, 0.2)
+                    for k in range(len(a_beams)):
+                        all_a_beams.append(a_beams[k])
+                        all_b_beams.append(b_beams[k])
+                except Exception:
+                    logger.warning(f'{file_path} error i={i} j={j}, singularity matrix error, no reason why',
+                                   exc_info=debug)
+
+            distances1, dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
+            distances2, dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
+
+            angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),
+                                                                                step=5)
+
+            norm1 = round(np.sum(dens1_curve), 6)
+            norm2 = round(np.sum(dens2_curve), 6)
+
+            x1 = np.array([dist1_set]).reshape(-1, 1) * pixel
+            y1 = np.log([dens1_curve / norm1]).reshape(-1, 1)
+
+            x2 = np.array([dist2_set]).reshape(-1, 1) * pixel
+            y2 = np.log([dens2_curve / norm2]).reshape(-1, 1)
+
+            x1 = x1[start:end]
+            y1 = y1[start:end]
+
+            x2 = x2[start:end]
+            y2 = y2[start:end]
+
+            (x_pred1, y_pred1), k1, b1, angle1, score1 = grainApprox.lin_regr_approx(x1, y1)
+            (x_pred2, y_pred2), k2, b2, angle2, score2 = grainApprox.lin_regr_approx(x2, y2)
+
+            dist_step = pixel * step
+
+            legend1 = cls.beams_legend(names[i], types[i], norm1, k1, angle1, b1, score1, dist_step,
+                                       distances1.mean() * pixel)
+            legend2 = cls.beams_legend(names[i], types[i], norm2, k2, angle2, b2, score2, dist_step,
+                                       distances2.mean() * pixel)
+
+            texts.append([legend1, legend2])
+            xy_scatter.append([(x1, y1), (x2, y2)])
+            xy_linear.append((
+                (x_pred1, y_pred1),
+                (x_pred2, y_pred2)
+            ))
+            xy_linear_data.append((
+                (k1, b1, angle1, score1),
+                (k2, b2, angle2, score2)
+            ))
+
+        if save:
+            np.save(f'{folder}/xy_scatter_beams_step_{step}.npy', np.array(xy_scatter, dtype=object))
+            np.save(f'{folder}/xy_linear_beams_step_{step}.npy', np.array(xy_linear))
+            np.save(f'{folder}/xy_linear_data_beams_step_{step}.npy', np.array(xy_linear_data))
+            np.save(f'{folder}/texts_beams_step_{step}.npy', np.array(texts))
