@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import requests
 
 from matplotlib import pyplot as plt
 from matplotlib import cm
@@ -177,7 +178,9 @@ class grainPreprocess():
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
-
+        #
+        # переводит из tiff 2^16 в jpg 2^8 бит
+        #
         folders = os.listdir(folder_path)
 
         if not os.path.exists(new_folder_path):
@@ -195,6 +198,26 @@ class grainPreprocess():
                     img = (img / 255).astype('uint8')
 
                     io.imsave(new_folder_path + '/' + folder + '/' + name[start_name:stop_name] + '.jpg', img)
+
+    @classmethod
+    def get_example_images(cls):
+        '''
+        :return: ndarray [[img1],[img2]..]
+        '''
+        #
+        # скачивает из контейнера s3 по 1 снимку каждого образца
+        #
+
+        urls = CfgDataset.images_urls
+        images = []
+
+        for url in urls:
+            logger.warning(f'downloading {url}')
+            file = requests.get(url, stream=True).raw
+            img = np.asarray(Image.open(file))
+            images.append([img])
+
+        return np.array(images)
 
 
 class grainMorphology():
