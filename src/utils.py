@@ -175,6 +175,27 @@ class grainPreprocess():
             np.save(save_name, all_images)
         return all_images
 
+    @classmethod
+    def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
+
+        folders = os.listdir(folder_path)
+
+        if not os.path.exists(new_folder_path):
+            os.mkdir(new_folder_path)
+
+        for folder in folders:
+            if not os.path.exists(new_folder_path + '/' + folder):
+                os.mkdir(new_folder_path + '/' + folder)
+
+        for i, folder in enumerate(folders):
+            images_names = os.listdir(folder_path + '/' + folder)
+            for i, name in enumerate(images_names):
+                if 'hdr' not in name:
+                    img = io.imread(folder_path + '/' + folder + '/' + name)
+                    img = (img / 255).astype('uint8')
+
+                    io.imsave(new_folder_path + '/' + folder + '/' + name[start_name:stop_name] + '.jpg', img)
+
 
 class grainMorphology():
 
