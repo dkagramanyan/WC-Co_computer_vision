@@ -19,9 +19,10 @@ from scipy.spatial import distance
 from skimage import io
 from skimage.measure import EllipseModel
 from skimage.color import rgb2gray
-from skimage import filters
+from skimage import filters, util
 from skimage.morphology import disk, skeletonize
 from skimage.measure import approximate_polygon
+from skimage import transform
 
 from PIL import Image, ImageDraw, ImageFilter, ImageOps
 
@@ -88,9 +89,8 @@ class grainPreprocess():
         r = 1 - l
         gray = np.array(left_img) * l
         gray += np.array(right_img) * r
-        gray = gray.astype('uint8')
-        img = rgb2gray(gray)
-        return img
+
+        return gray.astype('uint8')
 
     @classmethod
     def do_otsu(cls, img: np.ndarray) -> np.ndarray:
@@ -104,28 +104,25 @@ class grainPreprocess():
         global_thresh = filters.threshold_otsu(img)
         binary_global = img > global_thresh
 
-        return binary_global
+        return binary_global.astype('uint8')
 
     @classmethod
-    def image_preprocess(cls, image: np.ndarray, h=135, k=1) -> np.ndarray:
+    def image_preprocess(cls, image: np.ndarray) -> np.ndarray:
         """
         :param image: ndarray (height,width,channels)
-        :param h: int scalar
-        :param k: float scalar
         :return: ndarray (height,width)
         """
         #
         # комбинация медианного фильтра, биноризации и гражиента
-        # у зерен значение пикселя - 0, у регионов связ. в-ва - 1,а у их границы - 2
+        # у зерен значение пикселя - 0, у регионов связ. в-ва - 127,а у их границы - 254
         #
-        combined = cls.combine(image, h, k)
-        denoised = filters.rank.median(combined, disk(3))
-        binary = cls.do_otsu(denoised).astype('uint8')
-        grad = abs(filters.rank.gradient(binary, disk(1))).astype('uint8')
-        bin_grad = 1 - binary + grad
-        new_image = (bin_grad > 0).astype('uint8') * 255
+        unsigned_image = util.img_as_ubyte(image)
+        denoised = filters.rank.median(unsigned_image, disk(3))
+        binary = cls.do_otsu(denoised)
+        grad = abs(filters.rank.gradient(binary, disk(1)))
+        bin_grad = (1 - binary + grad) * 127
 
-        return new_image
+        return bin_grad.astype(np.uint8)
 
     @classmethod
     def image_preprocess_kmeans(cls, image: np.ndarray, h=135, k=1, n_clusters=3, pos=1) -> np.ndarray:
@@ -152,7 +149,8 @@ class grainPreprocess():
         return new_image
 
     @classmethod
-    def read_preprocess_data(cls, images_dir, images_num_per_class=100, preprocess=False, save=False, crop=False, h=135,
+    def read_preprocess_data(cls, images_dir, images_num_per_class=100, preprocess=False, save=False, crop_bottom=False,
+                             h=135, resize=True, resize_shape=None,
                              save_name='all_images.npy'):
         folders_names = os.listdir(images_dir)
         images_paths_raw = [os.listdir(images_dir + '/' + folder) for folder in folders_names]
@@ -166,12 +164,23 @@ class grainPreprocess():
 
         for images_folder in images_paths:
             images = [io.imread(name) for i, name in enumerate(images_folder) if i < images_num_per_class]
-            if preprocess:
-                images = [grainPreprocess.image_preprocess(image) for image in images]
-            if not preprocess and crop:
+
+            if crop_bottom:
+                # вырезает нижнюю полоску фотографии с линекой и тд
                 images = [grainPreprocess.combine(image, h) for image in images]
+            if resize:
+                # ресайзит изображения
+                if resize_shape is not None:
+                    images = [transform.resize(image, resize_shape) for image in images]
+                else:
+                    print('No resize shape')
+            if preprocess:
+                # последовательно применяет фильтры (медианный, отсу, собель и тд)
+                images = [grainPreprocess.image_preprocess(image) for image in images]
 
             all_images.append(images)
+
+        all_images = np.array(all_images).astype(np.uint8)
         if save:
             np.save(save_name, all_images)
         return all_images

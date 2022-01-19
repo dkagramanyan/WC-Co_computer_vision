@@ -1,4 +1,4 @@
-from src.u2net import U2NET
+from src.nn import U2NET
 import numpy as np
 import datetime
 import tensorflow as tf
