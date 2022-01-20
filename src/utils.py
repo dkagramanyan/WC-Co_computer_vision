@@ -20,7 +20,7 @@ from skimage import io
 from skimage.measure import EllipseModel
 from skimage.color import rgb2gray
 from skimage import filters, util
-from skimage.morphology import disk, skeletonize
+from skimage.morphology import disk, skeletonize, ball
 from skimage.measure import approximate_polygon
 from skimage import transform
 
@@ -37,6 +37,8 @@ from scipy.spatial import ConvexHull
 
 import sys
 import logging
+import time
+import glob
 from logging import StreamHandler, Formatter
 
 from src.cfg import CfgAnglesNames, CfgBeamsNames, CfgDataset
@@ -117,9 +119,9 @@ class grainPreprocess():
         # у зерен значение пикселя - 0, у регионов связ. в-ва - 127,а у их границы - 254
         #
         unsigned_image = util.img_as_ubyte(image)
-        denoised = filters.rank.median(unsigned_image, disk(3))
+        denoised = filters.rank.median(unsigned_image, ball(3))
         binary = cls.do_otsu(denoised)
-        grad = abs(filters.rank.gradient(binary, disk(1)))
+        grad = abs(filters.rank.gradient(binary, ball(1)))
         bin_grad = (1 - binary + grad) * 127
 
         return bin_grad.astype(np.uint8)
@@ -152,38 +154,82 @@ class grainPreprocess():
     def read_preprocess_data(cls, images_dir, images_num_per_class=100, preprocess=False, save=False, crop_bottom=False,
                              h=135, resize=True, resize_shape=None,
                              save_name='all_images.npy'):
-        folders_names = os.listdir(images_dir)
-        images_paths_raw = [os.listdir(images_dir + '/' + folder) for folder in folders_names]
 
-        images_paths = []
-        all_images = []
-        for i, folder in enumerate(images_paths_raw):
-            images_paths.append([])
-            for image_path in folder:
-                images_paths[i].append(images_dir + '/' + folders_names[i] + '/' + image_path)
+        folders_names = glob.glob(images_dir + '*')
+        images_paths = glob.glob(images_dir + '*/*')
 
-        for images_folder in images_paths:
-            images = [io.imread(name) for i, name in enumerate(images_folder) if i < images_num_per_class]
+        classes_num = len(folders_names)
 
-            if crop_bottom:
+        items = list(range(0, int(images_num_per_class * classes_num)))
+        l = len(items)
+
+        # Initial call to print 0% progress
+        GrainLogs.printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=50)
+
+        images = [io.imread(image_path).astype(np.uint8) for i, image_path in enumerate(images_paths) if
+                  i < images_num_per_class * classes_num]
+        preproc_images = []
+
+        old_shape = images[0].shape
+        channels = None
+        if len(old_shape) == 2:
+            channels = 1
+        elif len(old_shape) == 3:
+            if old_shape[-1] == 1:
+                channels = 1
+            elif old_shape[-1] == 3:
+                channels = 3
+
+        if not classes_num * images_num_per_class < len(images):
+            for i, image in enumerate(images):
+
                 # вырезает нижнюю полоску фотографии с линекой и тд
-                images = [grainPreprocess.combine(image, h) for image in images]
-            if resize:
+                if crop_bottom:
+                    image = grainPreprocess.combine(image, h)
+
                 # ресайзит изображения
-                if resize_shape is not None:
-                    images = [transform.resize(image, resize_shape) for image in images]
-                else:
-                    print('No resize shape')
-            if preprocess:
+                if resize:
+                    if resize_shape is not None:
+                        image = transform.resize(image, resize_shape)
+                    else:
+                        print('No resize shape')
+
                 # последовательно применяет фильтры (медианный, отсу, собель и тд)
-                images = [grainPreprocess.image_preprocess(image) for image in images]
+                if preprocess:
+                    image = grainPreprocess.image_preprocess(image)
 
-            all_images.append(images)
+                GrainLogs.printProgressBar(i + 1, l, prefix='Progress:', suffix='Complete', length=50)
+                preproc_images.append(image)
 
-        all_images = np.array(all_images).astype(np.uint8)
-        if save:
-            np.save(save_name, all_images)
-        return all_images
+            if resize:
+                new_shape = resize_shape
+            else:
+                new_shape = old_shape
+
+            preproc_images = np.array(preproc_images).reshape(
+                (classes_num, images_num_per_class, new_shape[0], new_shape[1], channels))
+            if save:
+                np.save(save_name, preproc_images)
+            return preproc_images
+        else:
+            print('classes do not have equal images num')
+
+        # for images_folder in images_paths:
+        #     images = [io.imread(name).astype(np.uint8) for i, name in enumerate(images_folder) if
+        #               i < images_num_per_class]
+        #
+        #     if crop_bottom:
+        #         # вырезает нижнюю полоску фотографии с линекой и тд
+        #         images = [grainPreprocess.combine(image, h) for image in images]
+        #     if resize:
+        #         # ресайзит изображения
+        #         if resize_shape is not None:
+        #             images = [transform.resize(image, resize_shape) for image in images]
+        #         else:
+        #             print('No resize shape')
+        #     if preprocess:
+        #         # последовательно применяет фильтры (медианный, отсу, собель и тд)
+        #         images = [grainPreprocess.image_preprocess(image) for image in images]
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
@@ -981,3 +1027,28 @@ class grainGenerate():
             np.save(f'{folder}/' + CfgBeamsNames.approx + f'{step}.npy', np.array(xy_linear))
             np.save(f'{folder}/' + CfgBeamsNames.approx_data + f'{step}.npy', np.array(xy_linear_data))
             np.save(f'{folder}/' + CfgBeamsNames.legend + f'{step}.npy', np.array(texts))
+
+
+class GrainLogs():
+
+    @classmethod
+    def printProgressBar(cls, iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\r"):
+        """
+        Call in a loop to create terminal progress bar
+        @params:
+            iteration   - Required  : current iteration (Int)
+            total       - Required  : total iterations (Int)
+            prefix      - Optional  : prefix string (Str)
+            suffix      - Optional  : suffix string (Str)
+            decimals    - Optional  : positive number of decimals in percent complete (Int)
+            length      - Optional  : character length of bar (Int)
+            fill        - Optional  : bar fill character (Str)
+            printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+        """
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+        bar = fill * filledLength + '-' * (length - filledLength)
+        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=printEnd)
+        # Print New Line on Complete
+        if iteration == total:
+            print()
