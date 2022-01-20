@@ -181,8 +181,8 @@ class grainPreprocess():
                 channels = 3
 
         if not classes_num * images_num_per_class < len(images):
+            start_time = time.time()
             for i, image in enumerate(images):
-
                 # вырезает нижнюю полоску фотографии с линекой и тд
                 if crop_bottom:
                     image = grainPreprocess.combine(image, h)
@@ -197,8 +197,10 @@ class grainPreprocess():
                 # последовательно применяет фильтры (медианный, отсу, собель и тд)
                 if preprocess:
                     image = grainPreprocess.image_preprocess(image)
-
-                GrainLogs.printProgressBar(i + 1, l, prefix='Progress:', suffix='Complete', length=50)
+                end_time = time.time()
+                eta = round((end_time - start_time) * (l - 1 - i), 1)
+                GrainLogs.printProgressBar(i + 1, l, eta=eta, prefix='Progress:', suffix='Complete', length=50)
+                start_time = time.time()
                 preproc_images.append(image)
 
             if resize:
@@ -213,23 +215,6 @@ class grainPreprocess():
             return preproc_images
         else:
             print('classes do not have equal images num')
-
-        # for images_folder in images_paths:
-        #     images = [io.imread(name).astype(np.uint8) for i, name in enumerate(images_folder) if
-        #               i < images_num_per_class]
-        #
-        #     if crop_bottom:
-        #         # вырезает нижнюю полоску фотографии с линекой и тд
-        #         images = [grainPreprocess.combine(image, h) for image in images]
-        #     if resize:
-        #         # ресайзит изображения
-        #         if resize_shape is not None:
-        #             images = [transform.resize(image, resize_shape) for image in images]
-        #         else:
-        #             print('No resize shape')
-        #     if preprocess:
-        #         # последовательно применяет фильтры (медианный, отсу, собель и тд)
-        #         images = [grainPreprocess.image_preprocess(image) for image in images]
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
@@ -425,10 +410,10 @@ class grainMark():
 
         # направление обхода контура по часовой стрелке
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-        for i, cnt in enumerate(contours):
-            contours[i] = cnt[:, 0]
-        return contours
+        new_contours = []
+        for cnt in contours:
+            new_contours.append(np.array(cnt).reshape((-1, 2)))
+        return new_contours
 
     @classmethod
     def get_contours(cls, image, tol=3):
@@ -502,7 +487,7 @@ class grainMark():
         return np.array(angles)
 
     @classmethod
-    def get_mvee_params(cls, image, tol=0.2):
+    def get_mvee_params(cls, image, tol=0.2, debug=False):
         """
         :param image:
         :param tol:
@@ -520,25 +505,30 @@ class grainMark():
 
         for i, cnt in enumerate(approx):
             if len(cnt) > 2:
-                cnt = np.array(cnt)
-                polygon = Polygon(cnt)
+                try:
+                    cnt = np.array(cnt)
+                    polygon = Polygon(cnt)
 
-                x_centroid, y_centroid = polygon.centroid.coords[0]
-                points = cnt - (x_centroid, y_centroid)
+                    x_centroid, y_centroid = polygon.centroid.coords[0]
+                    points = cnt - (x_centroid, y_centroid)
 
-                x_norm, y_norm = points.mean(axis=0)
-                points = (points - (x_norm, y_norm))
-                data = getMinVolEllipse(points, tol)
+                    x_norm, y_norm = points.mean(axis=0)
+                    points = (points - (x_norm, y_norm))
+                    data = getMinVolEllipse(points, tol)
 
-                xc, yc = data[0][0]
-                a, b = data[1]
-                sin = data[2][0][1]
-                angle = -np.arcsin(sin)
+                    xc, yc = data[0][0]
+                    a, b = data[1]
+                    sin = data[2][0][1]
+                    angle = -np.arcsin(sin)
 
-                a_beams.append(a)
-                b_beams.append(b)
-                angles.append(angle)
-                centroids.append([x_centroid + x_norm, y_centroid + y_norm])
+                    a_beams.append(a)
+                    b_beams.append(b)
+                    angles.append(angle)
+                    centroids.append([x_centroid + x_norm, y_centroid + y_norm])
+                except Exception:
+                    if debug:
+                        logger.warning(f'{file_path} error i={i}, singularity matrix error, no reason why',
+                                       exc_info=debug)
 
         a_beams = np.array(a_beams, dtype='int32')
         b_beams = np.array(b_beams, dtype='int32')
@@ -723,20 +713,22 @@ class grainStats():
         # приведение углов к кратости, например 0,step,2*step и тд
         #
         array_copy = array.copy()
+        if step != 0:
+            for i, a in enumerate(array_copy):
+                while array_copy[i] % step != 0:
+                    array_copy[i] += 1
 
-        for i, a in enumerate(array_copy):
-            while array_copy[i] % step != 0:
-                array_copy[i] += 1
-
-        array_copy_set = np.sort(np.array(list(set(array_copy))))
-        dens_curve = []
-        for arr in array_copy_set:
-            num = 0
-            for ar in array_copy:
-                if arr == ar:
-                    num += 1
-            dens_curve.append(num)
-        return np.array(array_copy), array_copy_set, np.array(dens_curve)
+            array_copy_set = np.sort(np.array(list(set(array_copy))))
+            dens_curve = []
+            for arr in array_copy_set:
+                num = 0
+                for ar in array_copy:
+                    if arr == ar:
+                        num += 1
+                dens_curve.append(num)
+            return np.array(array_copy), array_copy_set, np.array(dens_curve)
+        else:
+            print('step is 0, stats preprocess error')
 
     @classmethod
     def gaussian(cls, x, mu, sigma, amp=1):
@@ -824,6 +816,7 @@ class grainApprox():
         # аппроксимация распределения линейной функцией
         # и создание графика по параметрам распределения
         #
+
         x_pred = np.linspace(x.min(axis=0), x.max(axis=0), 50)
 
         reg = LinearRegression().fit(x, y)
@@ -903,11 +896,25 @@ class grainGenerate():
         if not os.path.exists(folder):
             os.mkdir(folder)
 
+        start_time = 0
+        progress_bar_step = 0
+
+        l = images.shape[0] * images.shape[1]
+        GrainLogs.printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=30)
+
         for i, images_list in enumerate(images):
             all_original_angles = []
 
             for j, image in enumerate(images_list):
                 original_angles = grainMark.get_angles(image)
+                end_time = time.time()
+                progress_bar_step += 1
+                eta = round((end_time - start_time) * (l - 1 - progress_bar_step), 1)
+                # print('eta: ', eta)
+                # вывод времени не работает, пофиксить потом
+                GrainLogs.printProgressBar(progress_bar_step, l, prefix='Progress:', suffix='Complete',
+                                           length=30)
+                start_time = time.time()
 
                 for angle in original_angles:
                     all_original_angles.append(angle)
@@ -965,31 +972,43 @@ class grainGenerate():
         xy_scatter = []
         xy_linear = []
         xy_linear_data = []
+        l = images.shape[0] * images.shape[1]
+        GrainLogs.printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=30)
+
+        progress_bar_step = 0
+        start_time = 0
+        angles = None
 
         for i, images_list in enumerate(images):
+
             all_a_beams = []
             all_b_beams = []
 
             for j, image in enumerate(images_list):
-                try:
-                    a_beams, b_beams, angles, cetroids = grainMark.get_mvee_params(image, 0.2)
-                    for k in range(len(a_beams)):
-                        all_a_beams.append(a_beams[k])
-                        all_b_beams.append(b_beams[k])
-                except Exception:
-                    logger.warning(f'{file_path} error i={i} j={j}, singularity matrix error, no reason why',
-                                   exc_info=debug)
+                a_beams, b_beams, angles, cetroids = grainMark.get_mvee_params(image, 0.2, debug=debug)
+                progress_bar_step += 1
+                end_time = time.time()
+                eta = round((end_time - start_time) * (l - 1 - progress_bar_step), 1)
+                # print('eta: ', eta)
+                # вывод времени не работает, пофиксить потом
+                GrainLogs.printProgressBar(progress_bar_step, l, prefix='Progress:', suffix='Complete',
+                                           length=30)
+                start_time = time.time()
+                for k in range(len(a_beams)):
+                    all_a_beams.append(a_beams[k])
+                    all_b_beams.append(b_beams[k])
 
             distances1, dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
             distances2, dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
 
             angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),
-                                                                                step=5)
+                                                                                step=step)
 
             norm1 = round(np.sum(dens1_curve), 6)
             norm2 = round(np.sum(dens2_curve), 6)
 
             x1 = np.array([dist1_set]).reshape(-1, 1) * pixel
+
             y1 = np.log([dens1_curve / norm1]).reshape(-1, 1)
 
             x2 = np.array([dist2_set]).reshape(-1, 1) * pixel
@@ -1032,7 +1051,8 @@ class grainGenerate():
 class GrainLogs():
 
     @classmethod
-    def printProgressBar(cls, iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\r"):
+    def printProgressBar(cls, iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\r",
+                         eta=None):
         """
         Call in a loop to create terminal progress bar
         @params:
@@ -1048,7 +1068,7 @@ class GrainLogs():
         percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
         filledLength = int(length * iteration // total)
         bar = fill * filledLength + '-' * (length - filledLength)
-        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=printEnd)
+        print(f'\r{prefix} |{bar}| {percent}% {suffix} ETA:{eta} s', end=printEnd)
         # Print New Line on Complete
         if iteration == total:
             print()
