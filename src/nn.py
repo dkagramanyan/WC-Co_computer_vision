@@ -1,6 +1,11 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Conv2D, Input, BatchNormalization, ReLU, MaxPool2D, UpSampling2D
+from tensorflow.keras.layers import Conv2D, Input, BatchNormalization, ReLU, MaxPool2D, UpSampling2D, Conv2DTranspose, \
+    LeakyReLU
+from tensorflow.keras.initializers import he_normal
+from tensorflow.keras.activations import sigmoid
+
+import numpy as np
 
 # Optimizer / Loss
 adam = keras.optimizers.Adam(learning_rate=.001, beta_1=.9, beta_2=.999, epsilon=1e-08)
@@ -23,11 +28,12 @@ def bce_loss(y_true, y_pred):
 class ConvBlock(keras.layers.Layer):
     def __init__(self, out_ch=3, dirate=1):
         super(ConvBlock, self).__init__()
-        self.conv = Conv2D(out_ch, (3, 3), strides=1, padding='same', dilation_rate=dirate)
+        self.conv = Conv2D(out_ch, (3, 3), strides=1, padding='same', dilation_rate=dirate,
+                           kernel_initializer=he_normal())
         self.bn = BatchNormalization()
-        self.relu = ReLU()
+        self.relu = LeakyReLU()
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         hx = inputs
 
         x = self.conv(hx)
@@ -73,7 +79,7 @@ class RSU7(keras.layers.Layer):
         self.conv_b1_d = ConvBlock(out_ch, dirate=1)
         self.upsample_6 = UpSampling2D(size=(2, 2), interpolation='bilinear')
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         hx = inputs
         hxin = self.conv_b0(hx)
 
@@ -149,7 +155,7 @@ class RSU6(keras.layers.Layer):
         self.conv_b1_d = ConvBlock(out_ch, dirate=1)
         self.upsample_5 = UpSampling2D(size=(2, 2), interpolation='bilinear')
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         hx = inputs
         hxin = self.conv_b0(hx)
 
@@ -214,7 +220,7 @@ class RSU5(keras.layers.Layer):
         self.conv_b1_d = ConvBlock(out_ch, dirate=1)
         self.upsample_4 = UpSampling2D(size=(2, 2), interpolation='bilinear')
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         hx = inputs
         hxin = self.conv_b0(hx)
 
@@ -268,7 +274,7 @@ class RSU4(keras.layers.Layer):
         self.conv_b1_d = ConvBlock(out_ch, dirate=1)
         self.upsample_3 = UpSampling2D(size=(2, 2), interpolation='bilinear')
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         hx = inputs
         hxin = self.conv_b0(hx)
 
@@ -305,7 +311,7 @@ class RSU4F(keras.layers.Layer):
         self.conv_b2_d = ConvBlock(mid_ch, dirate=2)
         self.conv_b1_d = ConvBlock(out_ch, dirate=1)
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         hx = inputs
         hxin = self.conv_b0(hx)
 
@@ -367,7 +373,7 @@ class U2NET(keras.models.Model):
 
         self.outconv = Conv2D(out_ch, (1, 1), padding='same')
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         hx = inputs
 
         hx1 = self.stage1(hx)
@@ -417,236 +423,181 @@ class U2NET(keras.models.Model):
         # return sig(side1), hx6, hx5, hx4, hx3, hx2, hx1
         return sig(side1), hx6
 
-        # def call(self, inputs):
-        #     hx = inputs
-        #
-        #     hx1 = self.stage1(hx)
-        #     hx = self.pool12(hx1)
-        #
-        #     hx2 = self.stage2(hx)
-        #     hx = self.pool23(hx2)
-        #
-        #     hx3 = self.stage3(hx)
-        #     hx = self.pool34(hx3)
-        #
-        #     hx4 = self.stage4(hx)
-        #     hx = self.pool45(hx4)
-        #
-        #     hx5 = self.stage5(hx)
-        #     hx = self.pool56(hx5)
-        #
-        #     hx6 = self.stage6(hx)
-        #     hx6up = self.upsample_6(hx6)
-        #     side6 = self.upsample_out_6(self.side6(hx6))
-        #
-        #     hx5d = self.stage5d(tf.concat([hx6up, hx5], axis=3))
-        #     hx5dup = self.upsample_5(hx5d)
-        #     side5 = self.upsample_out_5(self.side5(hx5d))
-        #
-        #     hx4d = self.stage4d(tf.concat([hx5dup, hx4], axis=3))
-        #     hx4dup = self.upsample_4(hx4d)
-        #     side4 = self.upsample_out_4(self.side4(hx4d))
-        #
-        #     hx3d = self.stage3d(tf.concat([hx4dup, hx3], axis=3))
-        #     hx3dup = self.upsample_3(hx3d)
-        #     side3 = self.upsample_out_3(self.side3(hx3d))
-        #
-        #     hx2d = self.stage2d(tf.concat([hx3dup, hx2], axis=3))
-        #     hx2dup = self.upsample_2(hx2d)
-        #     side2 = self.upsample_out_2(self.side2(hx2d))
-        #
-        #     hx1d = self.stage1d(tf.concat([hx2dup, hx1], axis=3))
-        #     side1 = self.side1(hx1d)
-        #
-        #
-        #     sig = keras.activations.sigmoid
-        #
-        #     return tf.stack([sig(fused_output), sig(side1), sig(side2), sig(side3), sig(side4), sig(side5), sig(side6)])
+
+#########################
+#        ENCODER        #
+#########################
+
+class Encoder(tf.keras.Model):
+
+    def __init__(self, latent_dim, out_ch=1):
+        super(Encoder, self).__init__()
+
+        self.latent_dim = latent_dim
+
+        self.stage1 = RSU7(16, 64)
+        self.pool12 = MaxPool2D((2, 2), 2)
+
+        self.stage2 = RSU6(32, 64)
+        self.pool23 = MaxPool2D((2, 2), 2)
+
+        self.stage3 = RSU5(64, 128)
+        self.pool34 = MaxPool2D((2, 2), 2)
+
+        self.stage4 = RSU4(128, 256)
+        self.pool45 = MaxPool2D((2, 2), 2)
+
+        self.stage5 = RSU4F(256, 512)
+        self.pool56 = MaxPool2D((2, 2), 2)
+
+    def __call__(self, conditional_input):
+        # Encoder block 1
+        hx = conditional_input
+
+        hx1 = self.stage1(hx)
+        hx = self.pool12(hx1)
+
+        hx2 = self.stage2(hx)
+        hx = self.pool23(hx2)
+
+        hx3 = self.stage3(hx)
+        hx = self.pool34(hx3)
+
+        hx4 = self.stage4(hx)
+        hx = self.pool45(hx4)
+
+        hx5 = self.stage5(hx)
+        x = self.pool56(hx5)
+
+        x = tf.keras.layers.Flatten() (x)
+
+        x = tf.keras.layers.Dense(self.latent_dim * 2)(x)
+        x = LeakyReLU()(x)
+
+        return x
 
 
+#########################
+#        DECODER        #
+#########################
 
-from tensorflow.keras import backend
-from tensorflow.keras.applications import imagenet_utils
+class Decoder(tf.keras.Model):
 
-from tensorflow.keras import layers
-from tensorflow.python.util.tf_export import keras_export
-from tensorflow.python.keras.utils import data_utils
+    def __init__(self, batch_size=32, out_ch=1):
+        super(Decoder, self).__init__()
 
-WEIGHTS_PATH = ('https://storage.googleapis.com/tensorflow/keras-applications/'
-                'vgg19/vgg19_weights_tf_dim_ordering_tf_kernels.h5')
-WEIGHTS_PATH_NO_TOP = ('https://storage.googleapis.com/tensorflow/'
-                       'keras-applications/vgg19/'
-                       'vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5')
+        self.batch_size = batch_size
+        self.dense = tf.keras.layers.Dense(4 * 4 * self.batch_size * 8)
+        self.reshape = tf.keras.layers.Reshape(target_shape=(4, 4, self.batch_size * 8))
 
+        self.stage5d = RSU4F(256, 512)
+        self.stage4d = RSU4(128, 256)
+        self.stage3d = RSU5(64, 128)
+        self.stage2d = RSU6(32, 64)
+        self.stage1d = RSU7(16, 64)
 
+        self.upsample_2 = UpSampling2D(size=(2, 2), interpolation='bilinear')
+        self.upsample_3 = UpSampling2D(size=(2, 2), interpolation='bilinear')
+        self.upsample_4 = UpSampling2D(size=(2, 2), interpolation='bilinear')
+        self.upsample_5 = UpSampling2D(size=(2, 2), interpolation='bilinear')
 
-def VGG19(
-        include_top=True,
-        weights='imagenet',
-        input_tensor=None,
-        input_shape=None,
-        pooling=None,
-        classes=1000,
-        classifier_activation='softmax'):
-    """Instantiates the VGG19 architecture.
-    Reference:
-    - [Very Deep Convolutional Networks for Large-Scale Image Recognition](
-        https://arxiv.org/abs/1409.1556) (ICLR 2015)
-    For image classification use cases, see
-    [this page for detailed examples](
-      https://keras.io/api/applications/#usage-examples-for-image-classification-models).
-    For transfer learning use cases, make sure to read the
-    [guide to transfer learning & fine-tuning](
-      https://keras.io/guides/transfer_learning/).
-    The default input size for this model is 224x224.
-    Note: each Keras Application expects a specific kind of input preprocessing.
-    For VGG19, call `tf.keras.applications.vgg19.preprocess_input` on your
-    inputs before passing them to the model.
-    `vgg19.preprocess_input` will convert the input images from RGB to BGR,
-    then will zero-center each color channel with respect to the ImageNet dataset,
-    without scaling.
-    Args:
-      include_top: whether to include the 3 fully-connected
-        layers at the top of the network.
-      weights: one of `None` (random initialization),
-          'imagenet' (pre-training on ImageNet),
-          or the path to the weights file to be loaded.
-      input_tensor: optional Keras tensor
-        (i.e. output of `layers.Input()`)
-        to use as image input for the model.
-      input_shape: optional shape tuple, only to be specified
-        if `include_top` is False (otherwise the input shape
-        has to be `(224, 224, 3)`
-        (with `channels_last` data format)
-        or `(3, 224, 224)` (with `channels_first` data format).
-        It should have exactly 3 inputs channels,
-        and width and height should be no smaller than 32.
-        E.g. `(200, 200, 3)` would be one valid value.
-      pooling: Optional pooling mode for feature extraction
-        when `include_top` is `False`.
-        - `None` means that the output of the model will be
-            the 4D tensor output of the
-            last convolutional block.
-        - `avg` means that global average pooling
-            will be applied to the output of the
-            last convolutional block, and thus
-            the output of the model will be a 2D tensor.
-        - `max` means that global max pooling will
-            be applied.
-      classes: optional number of classes to classify images
-        into, only to be specified if `include_top` is True, and
-        if no `weights` argument is specified.
-      classifier_activation: A `str` or callable. The activation function to use
-        on the "top" layer. Ignored unless `include_top=True`. Set
-        `classifier_activation=None` to return the logits of the "top" layer.
-        When loading pretrained weights, `classifier_activation` can only
-        be `None` or `"softmax"`.
-    Returns:
-      A `keras.Model` instance.
-    """
-    if not (weights in {'imagenet', None} or tf.io.gfile.exists(weights)):
-        raise ValueError('The `weights` argument should be either '
-                         '`None` (random initialization), `imagenet` '
-                         '(pre-training on ImageNet), '
-                         'or the path to the weights file to be loaded.  '
-                         f'Received: `weights={weights}.`')
+    def __call__(self, z_cond):
+        # Reshape input
+        x = self.dense(z_cond)
+        x = tf.nn.leaky_relu(x)
+        x = self.reshape(x)
 
-    if weights == 'imagenet' and include_top and classes != 1000:
-        raise ValueError('If using `weights` as `"imagenet"` with `include_top` '
-                         'as true, `classes` should be 1000.  '
-                         f'Received: `classes={classes}.`')
+        hx5d = self.stage5d(x)
+        hx5dup = self.upsample_5(hx5d)
+
+        hx4d = self.stage4d(hx5dup)
+        hx4dup = self.upsample_4(hx4d)
+
+        hx3d = self.stage3d(hx4dup)
+        hx3dup = self.upsample_3(hx3d)
+
+        hx2d = self.stage2d(hx3dup)
+        hx2dup = self.upsample_2(hx2d)
+
+        hx1d = self.stage1d(hx2dup)
+        x = self.side1(hx1d)
+        x = sigmoid(x)
+
+        return x
 
 
-    if input_tensor is None:
-        img_input = layers.Input(shape=input_shape)
-    else:
-        if not backend.is_keras_tensor(input_tensor):
-            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
-        else:
-            img_input = input_tensor
-    # Block 1
-    x = layers.Conv2D(
-        64, (3, 3), activation='relu', padding='same', name='block1_conv1')(
-        img_input)
-    x = layers.Conv2D(
-        64, (3, 3), activation='relu', padding='same', name='block1_conv2')(x)
-    x = layers.MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+#########################
+#       Conv-CVAE       #
+#########################
 
-    # Block 2
-    x = layers.Conv2D(
-        128, (3, 3), activation='relu', padding='same', name='block2_conv1')(x)
-    x = layers.Conv2D(
-        128, (3, 3), activation='relu', padding='same', name='block2_conv2')(x)
-    x = layers.MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+class ConvCVAE(tf.keras.Model):
 
-    # Block 3
-    x = layers.Conv2D(
-        256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
-    x = layers.Conv2D(
-        256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
-    x = layers.Conv2D(
-        256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
-    x = layers.Conv2D(
-        256, (3, 3), activation='relu', padding='same', name='block3_conv4')(x)
-    x = layers.MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+    def __init__(self,
+                 encoder,
+                 decoder,
+                 label_dim,
+                 latent_dim,
+                 batch_size=32,
+                 beta=1,
+                 image_dim=(64, 64, 3)):
+        super(ConvCVAE, self).__init__()
 
-    # Block 4
-    x = layers.Conv2D(
-        512, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation='relu', padding='same', name='block4_conv4')(x)
-    x = layers.MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+        self.encoder = encoder
+        self.decoder = decoder
+        self.label_dim = label_dim
+        self.latent_dim = latent_dim
+        self.batch_size = batch_size
+        self.beta = beta
+        self.image_dim = image_dim
 
-    # Block 5
-    x = layers.Conv2D(
-        512, (3, 3), activation='relu', padding='same', name='block5_conv1')(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation='relu', padding='same', name='block5_conv2')(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation='relu', padding='same', name='block5_conv4')(x)
-    x = layers.MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
+    def __call__(self, inputs):
+        input_img, input_label, conditional_input = self.conditional_input(inputs)
 
-    if include_top:
-        # Classification block
-        x = layers.Flatten(name='flatten')(x)
-        x = layers.Dense(4096, activation='relu', name='fc1')(x)
-        x = layers.Dense(4096, activation='relu', name='fc2')(x)
-        x = layers.Dense(classes, activation=classifier_activation,
-                         name='predictions')(x)
-    else:
-        if pooling == 'avg':
-            x = layers.GlobalAveragePooling2D()(x)
-        elif pooling == 'max':
-            x = layers.GlobalMaxPooling2D()(x)
+        z_mean, z_log_var = tf.split(self.encoder(conditional_input), num_or_size_splits=2, axis=1)
+        z_cond = self.reparametrization(z_mean, z_log_var, input_label)
+        logits = self.decoder(z_cond)
 
+        recon_img = tf.nn.sigmoid(logits)
 
-    inputs = img_input
+        # Loss computation #
+        latent_loss = - 0.5 * tf.reduce_sum(1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var),
+                                            axis=-1)  # KL divergence
 
-    model = tf.keras.Model(inputs, x, name='vgg19')
+        # очень странная метрика для изображений
+        reconstr_loss = np.prod((64, 64)) * tf.keras.losses.binary_crossentropy(tf.keras.backend.flatten(input_img),
+                                                                                tf.keras.backend.flatten(
+                                                                                    recon_img))  # over weighted MSE
+        loss = reconstr_loss + self.beta * latent_loss  # weighted ELBO loss
+        loss = tf.reduce_mean(loss)
 
-    # Load weights.
-    if weights == 'imagenet':
-        if include_top:
-            weights_path = data_utils.get_file(
-                'vgg19_weights_tf_dim_ordering_tf_kernels.h5',
-                WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='cbe5617147190e668d6c5d5026f83318')
-        else:
-            weights_path = data_utils.get_file(
-                'vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5',
-                WEIGHTS_PATH_NO_TOP,
-                cache_subdir='models',
-                file_hash='253f8cb515780f3b799900260a226db6')
-        model.load_weights(weights_path)
-    elif weights is not None:
-        model.load_weights(weights)
+        return {
+            'recon_img': recon_img,
+            'latent_loss': latent_loss,
+            'reconstr_loss': reconstr_loss,
+            'loss': loss,
+            'z_mean': z_mean,
+            'z_log_var': z_log_var
+        }
 
-    return model
+    def conditional_input(self, inputs):
+        """ Builds the conditional input and returns the original input images, their labels and the conditional input."""
 
+        input_img = tf.keras.layers.InputLayer(input_shape=self.image_dim, dtype='float32')(inputs[0])
+        input_label = tf.keras.layers.InputLayer(input_shape=(self.label_dim,), dtype='float32')(inputs[1])
+        labels = tf.reshape(inputs[1], [-1, 1, 1, self.label_dim])  # batch_size, 1, 1, label_size
+        ones = tf.ones([inputs[0].shape[0]] + self.image_dim[0:-1] + [self.label_dim])  # batch_size, 64, 64, label_size
+        labels = ones * labels  # batch_size, 64, 64, label_size
+        conditional_input = tf.keras.layers.InputLayer(
+            input_shape=(self.image_dim[0], self.image_dim[1], self.image_dim[2] + self.label_dim), dtype='float32')(
+            tf.concat([inputs[0], labels], axis=3))
+
+        return input_img, input_label, conditional_input
+
+    def reparametrization(self, z_mean, z_log_var, input_label):
+        """ Performs the riparametrization trick"""
+
+        eps = tf.random.normal(shape=(input_label.shape[0], self.latent_dim), mean=0.0, stddev=1.0)
+        z = z_mean + tf.math.exp(z_log_var * .5) * eps
+        z_cond = tf.concat([z, input_label], axis=1)  # (batch_size, label_dim + latent_dim)
+
+        return z_cond
