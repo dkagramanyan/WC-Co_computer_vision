@@ -31,7 +31,7 @@ class ConvBlock(keras.layers.Layer):
         self.conv = Conv2D(out_ch, (3, 3), strides=1, padding='same', dilation_rate=dirate,
                            kernel_initializer=he_normal())
         self.bn = BatchNormalization()
-        self.relu = LeakyReLU()
+        self.relu = ReLU()
 
     def __call__(self, inputs):
         hx = inputs
