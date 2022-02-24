@@ -151,38 +151,28 @@ class grainPreprocess():
         return new_image
 
     @classmethod
-    def read_preprocess_data(cls, images_dir, images_num_per_class=100, preprocess=False, save=False, crop_bottom=False,
+    def read_preprocess_data(cls, images_dir, max_images_num_per_class=100, preprocess=False, save=False,
+                             crop_bottom=False,
                              h=135, resize=True, resize_shape=None,
                              save_name='all_images.npy'):
 
         folders_names = glob.glob(images_dir + '*')
-        images_paths = glob.glob(images_dir + '*/*')
+        images_paths = [glob.glob(folder_name + '/*')[:max_images_num_per_class] for  folder_name in folders_names]
 
-        classes_num = len(folders_names)
-
-        items = list(range(0, int(images_num_per_class * classes_num)))
-        l = len(items)
+        l = np.array(images_paths).flatten().shape[0]
 
         # Initial call to print 0% progress
         GrainLogs.printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=50)
 
-        images = [io.imread(image_path).astype(np.uint8) for i, image_path in enumerate(images_paths) if
-                  i < images_num_per_class * classes_num]
         preproc_images = []
 
-        old_shape = images[0].shape
-        channels = None
-        if len(old_shape) == 2:
-            channels = 1
-        elif len(old_shape) == 3:
-            if old_shape[-1] == 1:
-                channels = 1
-            elif old_shape[-1] == 3:
-                channels = 3
-
-        if not classes_num * images_num_per_class < len(images):
-            start_time = time.time()
-            for i, image in enumerate(images):
+        start_time = time.time()
+        step=0
+        for  i, images_list_paths in enumerate(images_paths):
+            preproc_images.append([])
+            for image_path in images_list_paths:
+                step+=1
+                image = io.imread(image_path).astype(np.uint8)
                 # вырезает нижнюю полоску фотографии с линекой и тд
                 if crop_bottom:
                     image = grainPreprocess.combine(image, h)
@@ -198,23 +188,14 @@ class grainPreprocess():
                 if preprocess:
                     image = grainPreprocess.image_preprocess(image)
                 end_time = time.time()
-                eta = round((end_time - start_time) * (l - 1 - i), 1)
-                GrainLogs.printProgressBar(i + 1, l, eta=eta, prefix='Progress:', suffix='Complete', length=50)
+                eta = round((end_time - start_time) * (l - step), 1)
+                GrainLogs.printProgressBar(step , l, eta=eta, prefix='Progress:', suffix='Complete', length=50)
                 start_time = time.time()
-                preproc_images.append(image)
+                preproc_images[i].append(image)
 
-            if resize:
-                new_shape = resize_shape
-            else:
-                new_shape = old_shape
-
-            preproc_images = np.array(preproc_images).reshape(
-                (classes_num, images_num_per_class, new_shape[0], new_shape[1], channels))
-            if save:
-                np.save(save_name, preproc_images)
-            return preproc_images
-        else:
-            print('classes do not have equal images num')
+        if save:
+            np.save(save_name, preproc_images)
+        return preproc_images
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
