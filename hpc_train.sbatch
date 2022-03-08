@@ -13,4 +13,4 @@ source activate tf2
 
 echo "Working on node `hostname`"
 echo "Assigned GPUs: $CUDA_VISIBLE_DEVICES"
-srun python nn_train.py
+srun python vae_train.py
