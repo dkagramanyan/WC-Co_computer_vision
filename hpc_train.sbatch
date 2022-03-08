@@ -4,11 +4,11 @@
 #SBATCH --cpus-per-task 6
 #SBATCH --constraint="type_c"
 
-module load Python/Anaconda_v10.2019
+module load Python/Anaconda_v11.2021
 
 # Активация окружения Anaconda
 # Перед активацией окружения рекомендуется деактивировать текущее
-source deactivate
+conda deactivate
 source activate tf2
 
 echo "Working on node `hostname`"
