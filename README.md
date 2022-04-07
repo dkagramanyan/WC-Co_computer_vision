@@ -1,5 +1,6 @@
 wc-cv
 =====
+[![DOI](https://zenodo.org/badge/423016150.svg)](https://zenodo.org/badge/latestdoi/423016150)
 
 Tools for analisys of WC-Co's microstructure SEM images. Only SEM images will be processed, no EBSD.  
 This tools are the result of working on [project 398](https://cabinet.miem.hse.ru/#/project/398/info), MIEM HSE
