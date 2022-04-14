@@ -8,4 +8,8 @@
 
 /src/__pycache__/*
 
-/data
+/data/*
+
+/docs/html/*
+/docs/_sources/*
+/docs/doctrees/*
