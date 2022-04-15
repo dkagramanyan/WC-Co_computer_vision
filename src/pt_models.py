@@ -218,6 +218,7 @@ class VQVAE(nn.Module):
 
         quant_b = self.quantize_conv_b(enc_b).permute(0, 2, 3, 1)
         quant_b, diff_b, id_b = self.quantize_b(quant_b)
+
         quant_b = quant_b.permute(0, 3, 1, 2)
         diff_b = diff_b.unsqueeze(0)
 
