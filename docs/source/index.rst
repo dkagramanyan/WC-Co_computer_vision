@@ -27,6 +27,8 @@
    approx
    generate
    logs
+   blender
+   nn
 
 
 

@@ -143,6 +143,16 @@
    Logs
   </a>
  </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="blender.html">
+   Blender
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="nn.html">
+   Машинное обучение
+  </a>
+ </li>
 </ul>
 
     </div>
@@ -253,12 +263,41 @@ title="Print to PDF"
     </ul>
   </div>
 </div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
 
     </div>
 </div>
 
 <!-- Table of contents -->
 <div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   Предобработка изображений
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   Расположение снимков
+  </a>
+ </li>
+</ul>
+
+    </nav>
 </div>
     </div>
     <div class="article row">
@@ -270,6 +309,24 @@ title="Print to PDF"
                 <div id="print-main-content">
                     <div id="jb-print-toc">
                         
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   Предобработка изображений
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   Расположение снимков
+  </a>
+ </li>
+</ul>
+
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -279,6 +336,59 @@ title="Print to PDF"
                 
   <section id="preprocess">
 <h1>Preprocess<a class="headerlink" href="#preprocess" title="Ссылка на этот заголовок">#</a></h1>
+<section id="id1">
+<h2>Предобработка изображений<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">#</a></h2>
+<p>Описанные инструменты разработаны для обработки SEM снимков.</p>
+<p>Для явного выделения границ фаз WC/Co используется последовательное применение следующиих алгоритом</p>
+<ol class="arabic simple">
+<li><p>выбирается сторона снимка. По умолчанию использвуется снимок в отраженных электронах</p></li>
+<li><p>изображение сглаживается медианным фильтром для подавления шумов и выравнивания цветового распределения пикселей</p></li>
+<li><p>слаженное изображение бинаризуется при помощи метода Отсу</p></li>
+<li><p>от бинаризованного изображения берется градиент. Он явно показывает переходы вас WC/Co</p></li>
+<li><p>бинаризованное изобржение инвертируется и к нему добавляется карта градиентов, полученная в п.4</p></li>
+</ol>
+<p>Полная обработка изображения выглядит следующим образом:</p>
+<blockquote>
+<div><p>preproc_image=1-Otsu(median_filter(image))+grad(Otsu(median_filter(image)))</p>
+</div></blockquote>
+<p>Значения пикселей по классам:</p>
+<ul class="simple">
+<li><p>0 - зерно WC</p></li>
+<li><p>127 - регион Co</p></li>
+<li><p>254 - граница региона Co, смежного с зернами WC. Толщина границы - 1 пиксель</p></li>
+</ul>
+<p>Обработка одного снимка</p>
+<blockquote>
+<div><p>img=io.imread(img_path)
+img=grainPreprocess.image_preprocess(img,h,k)</p>
+</div></blockquote>
+<p>Обработка всего датасета снимков</p>
+<blockquote>
+<div><p>all_images=grainPreprocess.read_preprocess_data(images_folder_path, images_num_per_class=150,  preprocess=True, save=True)</p>
+</div></blockquote>
+</section>
+<section id="id2">
+<h2>Расположение снимков<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">#</a></h2>
+<p>Расположение исходных снимков и предобработанных снимков должно выглядеть следующим образом</p>
+<p>project</p>
+<p>│</p>
+<dl>
+<dt>└───images_folder</dt><dd><p>│</p>
+<p>└───class1_images</p>
+<p>│       image1</p>
+<p>│       image2</p>
+<p>│       …</p>
+<p>└───class2_images</p>
+<p>│       image1</p>
+<p>│       image2</p>
+<p>│       …</p>
+<p>└───class3_images</p>
+<p>│       image1</p>
+<p>│       image2</p>
+<p>│       …</p>
+</dd>
+</dl>
+</section>
 </section>
 
 
