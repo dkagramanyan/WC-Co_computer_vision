@@ -17,6 +17,8 @@
    :caption: Содержание:
    
    introduction
+   alloy
+   images_source
    preprocess
    morphology
    fig

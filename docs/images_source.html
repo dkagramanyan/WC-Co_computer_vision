@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Preprocess &#8212; документация wc_cv v0.1</title>
+    <title>Описание снимков &#8212; документация wc_cv v0.1</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -34,8 +34,8 @@
     <script src="_static/translations.js"></script>
     <link rel="index" title="Алфавитный указатель" href="genindex.html" />
     <link rel="search" title="Поиск" href="search.html" />
-    <link rel="next" title="Morphology" href="morphology.html" />
-    <link rel="prev" title="Описание снимков" href="images_source.html" />
+    <link rel="next" title="Preprocess" href="preprocess.html" />
+    <link rel="prev" title="Образцы сплава" href="alloy.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="ru">
     
@@ -98,13 +98,13 @@
    Образцы сплава
   </a>
  </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="images_source.html">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
    Описание снимков
   </a>
  </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
+ <li class="toctree-l1">
+  <a class="reference internal" href="preprocess.html">
    Preprocess
   </a>
  </li>
@@ -236,7 +236,7 @@ title="Fullscreen mode"
   <div class="menu-dropdown__content">
     <ul>
       <li>
-        <a href="_sources/preprocess.rst.txt"
+        <a href="_sources/images_source.rst.txt"
    class="headerbtn"
    data-toggle="tooltip"
 data-placement="left"
@@ -273,70 +273,23 @@ title="Print to PDF"
     </ul>
   </div>
 </div>
-<label for="__page-toc"
-  class="headerbtn headerbtn-page-toc"
-  
->
-  
-
-<span class="headerbtn__icon-container">
-  <i class="fas fa-list"></i>
-  </span>
-
-</label>
 
     </div>
 </div>
 
 <!-- Table of contents -->
 <div class="col-md-3 bd-toc show noprint">
-    <div class="tocsection onthispage pt-5 pb-3">
-        <i class="fas fa-list"></i> Contents
-    </div>
-    <nav id="bd-toc-nav" aria-label="Page">
-        <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id1">
-   Предобработка изображений
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id2">
-   Расположение снимков
-  </a>
- </li>
-</ul>
-
-    </nav>
 </div>
     </div>
     <div class="article row">
         <div class="col pl-md-3 pl-lg-5 content-container">
             <!-- Table of contents that is only displayed when printing the page -->
             <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Preprocess</h1>
+                <h1>Описание снимков</h1>
                 <!-- Table of contents -->
                 <div id="print-main-content">
                     <div id="jb-print-toc">
                         
-                        <div>
-                            <h2> Contents </h2>
-                        </div>
-                        <nav aria-label="Page">
-                            <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id1">
-   Предобработка изображений
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id2">
-   Расположение снимков
-  </a>
- </li>
-</ul>
-
-                        </nav>
                     </div>
                 </div>
             </div>
@@ -344,61 +297,20 @@ title="Print to PDF"
                 
               <div>
                 
-  <section id="preprocess">
-<h1>Preprocess<a class="headerlink" href="#preprocess" title="Ссылка на этот заголовок">#</a></h1>
-<section id="id1">
-<h2>Предобработка изображений<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">#</a></h2>
-<p>Описанные инструменты разработаны для обработки SEM снимков.</p>
-<p>Для явного выделения границ фаз WC/Co используется последовательное применение следующиих алгоритом</p>
-<ol class="arabic simple">
-<li><p>выбирается сторона снимка. По умолчанию использвуется снимок в отраженных электронах</p></li>
-<li><p>изображение сглаживается медианным фильтром для подавления шумов и выравнивания цветового распределения пикселей</p></li>
-<li><p>слаженное изображение бинаризуется при помощи метода Отсу</p></li>
-<li><p>от бинаризованного изображения берется градиент. Он явно показывает переходы вас WC/Co</p></li>
-<li><p>бинаризованное изобржение инвертируется и к нему добавляется карта градиентов, полученная в п.4</p></li>
-</ol>
-<p>Полная обработка изображения выглядит следующим образом:</p>
-<blockquote>
-<div><p>preproc_image=1-Otsu(median_filter(image))+grad(Otsu(median_filter(image)))</p>
-</div></blockquote>
-<p>Значения пикселей по классам:</p>
-<ul class="simple">
-<li><p>0 - зерно WC</p></li>
-<li><p>127 - регион Co</p></li>
-<li><p>254 - граница региона Co, смежного с зернами WC. Толщина границы - 1 пиксель</p></li>
-</ul>
-<p>Обработка одного снимка</p>
-<blockquote>
-<div><p>img=io.imread(img_path)
-img=grainPreprocess.image_preprocess(img,h,k)</p>
-</div></blockquote>
-<p>Обработка всего датасета снимков</p>
-<blockquote>
-<div><p>all_images=grainPreprocess.read_preprocess_data(images_folder_path, images_num_per_class=150,  preprocess=True, save=True)</p>
-</div></blockquote>
-</section>
-<section id="id2">
-<h2>Расположение снимков<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">#</a></h2>
-<p>Расположение исходных снимков и предобработанных снимков должно выглядеть следующим образом</p>
-<p>project</p>
-<p>│</p>
-<dl>
-<dt>└───images_folder</dt><dd><p>│</p>
-<p>└───class1_images</p>
-<p>│       image1</p>
-<p>│       image2</p>
-<p>│       …</p>
-<p>└───class2_images</p>
-<p>│       image1</p>
-<p>│       image2</p>
-<p>│       …</p>
-<p>└───class3_images</p>
-<p>│       image1</p>
-<p>│       image2</p>
-<p>│       …</p>
-</dd>
-</dl>
-</section>
+  <section id="id1">
+<h1>Описание снимков<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">#</a></h1>
+<p>Полученые шлифы проходили предварительное микроскопическое исследование с помощью оптической микроскопии до и после травления
+в реактиве Мураками для выявления включений свободного углерода и фазы,
+а также растровой электронной  микроскопии (РЭМ)  и рентгеновского микроанализа на приборе Tescan Vega TS5130 MM,
+оборудованном энерго- дисперсионным спектрометром LINK  производства фирмы Oxford Instruments.
+Размер изображения 100 на 100 мкм. Размер цифрового изображения  3072 на
+1680 пикселей, каждый пиксель имеет 256 оттенков серого.</p>
+<figure class="align-center" id="id2">
+<img alt="https://pobedit.s3.us-east-2.amazonaws.com/docs_images/Ultra_Co15.jpg" src="https://pobedit.s3.us-east-2.amazonaws.com/docs_images/Ultra_Co15.jpg" />
+<figcaption>
+<p><span class="caption-text">ПРимер SEM изображения микроструктуры сплава WC-Co</span><a class="headerlink" href="#id2" title="Постоянная ссылка на рисунок">#</a></p>
+</figcaption>
+</figure>
 </section>
 
 
@@ -409,17 +321,17 @@ img=grainPreprocess.image_preprocess(img,h,k)</p>
                 
     <!-- Previous / next buttons -->
 <div class='prev-next-area'>
-    <a class='left-prev' id="prev-link" href="images_source.html" title="назад страница">
+    <a class='left-prev' id="prev-link" href="alloy.html" title="назад страница">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">назад</p>
-            <p class="prev-next-title">Описание снимков</p>
+            <p class="prev-next-title">Образцы сплава</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="morphology.html" title="вперёд страница">
+    <a class='right-next' id="next-link" href="preprocess.html" title="вперёд страница">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">вперёд</p>
-        <p class="prev-next-title">Morphology</p>
+        <p class="prev-next-title">Preprocess</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
