@@ -157,7 +157,7 @@ class grainPreprocess():
                              save_name='all_images.npy'):
 
         folders_names = glob.glob(images_dir + '*')
-        images_paths = [glob.glob(folder_name + '/*')[:max_images_num_per_class] for  folder_name in folders_names]
+        images_paths = [glob.glob(folder_name + '/*')[:max_images_num_per_class] for folder_name in folders_names]
 
         l = np.array(images_paths).flatten().shape[0]
 
@@ -167,11 +167,11 @@ class grainPreprocess():
         preproc_images = []
 
         start_time = time.time()
-        step=0
-        for  i, images_list_paths in enumerate(images_paths):
+        step = 0
+        for i, images_list_paths in enumerate(images_paths):
             preproc_images.append([])
             for image_path in images_list_paths:
-                step+=1
+                step += 1
                 image = io.imread(image_path).astype(np.uint8)
                 # вырезает нижнюю полоску фотографии с линекой и тд
                 if crop_bottom:
@@ -189,7 +189,7 @@ class grainPreprocess():
                     image = grainPreprocess.image_preprocess(image)
                 end_time = time.time()
                 eta = round((end_time - start_time) * (l - step), 1)
-                GrainLogs.printProgressBar(step , l, eta=eta, prefix='Progress:', suffix='Complete', length=50)
+                GrainLogs.printProgressBar(step, l, eta=eta, prefix='Progress:', suffix='Complete', length=50)
                 start_time = time.time()
                 preproc_images[i].append(image)
 
@@ -428,6 +428,7 @@ class grainMark():
 
         # вычисление угла
         angles = []
+        angles_pos = []
         for k, cnt in enumerate(approx):
             if len(cnt) > 2:
                 for i, point in enumerate(cnt[:-1]):
@@ -457,15 +458,19 @@ class grainMark():
                             ang = int(np.arccos(cos) * 180 / np.pi)
                             if det < 0:
                                 angles.append(ang)
+                                angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
                             else:
                                 angles.append(360 - ang)
+                                angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
                         else:
                             if det < 0:
                                 angles.append(360)
+                                angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
                             else:
                                 angles.append(0)
+                                angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
 
-        return np.array(angles)
+        return np.array(angles), angles_pos
 
     @classmethod
     def get_mvee_params(cls, image, tol=0.2, debug=False):
@@ -887,7 +892,7 @@ class grainGenerate():
             all_original_angles = []
 
             for j, image in enumerate(images_list):
-                original_angles = grainMark.get_angles(image)
+                original_angles, _ = grainMark.get_angles(image)
                 end_time = time.time()
                 progress_bar_step += 1
                 eta = round((end_time - start_time) * (l - 1 - progress_bar_step), 1)

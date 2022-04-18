@@ -5,6 +5,7 @@ scipy
 matplotlib
 pillow
 lmfit
+geos
 shapely
 opencv-python
 numpy
