@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Preprocess &#8212; документация wc_cv v0.1</title>
+    <title>Предобработка изображений &#8212; документация wc_cv v0.1</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -105,7 +105,7 @@
  </li>
  <li class="toctree-l1 current active">
   <a class="current reference internal" href="#">
-   Preprocess
+   Предобработка изображений
   </a>
  </li>
  <li class="toctree-l1">
@@ -296,11 +296,6 @@ title="Print to PDF"
     <nav id="bd-toc-nav" aria-label="Page">
         <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id1">
-   Предобработка изображений
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#id2">
    Расположение снимков
   </a>
@@ -314,7 +309,7 @@ title="Print to PDF"
         <div class="col pl-md-3 pl-lg-5 content-container">
             <!-- Table of contents that is only displayed when printing the page -->
             <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Preprocess</h1>
+                <h1>Предобработка изображений</h1>
                 <!-- Table of contents -->
                 <div id="print-main-content">
                     <div id="jb-print-toc">
@@ -324,11 +319,6 @@ title="Print to PDF"
                         </div>
                         <nav aria-label="Page">
                             <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id1">
-   Предобработка изображений
-  </a>
- </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#id2">
    Расположение снимков
@@ -344,10 +334,8 @@ title="Print to PDF"
                 
               <div>
                 
-  <section id="preprocess">
-<h1>Preprocess<a class="headerlink" href="#preprocess" title="Ссылка на этот заголовок">#</a></h1>
-<section id="id1">
-<h2>Предобработка изображений<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">#</a></h2>
+  <section id="id1">
+<h1>Предобработка изображений<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">#</a></h1>
 <p>Описанные инструменты разработаны для обработки SEM снимков.</p>
 <p>Для явного выделения границ фаз WC/Co используется последовательное применение следующиих алгоритом</p>
 <ol class="arabic simple">
@@ -376,28 +364,64 @@ img=grainPreprocess.image_preprocess(img,h,k)</p>
 <blockquote>
 <div><p>all_images=grainPreprocess.read_preprocess_data(images_folder_path, images_num_per_class=150,  preprocess=True, save=True)</p>
 </div></blockquote>
-</section>
 <section id="id2">
 <h2>Расположение снимков<a class="headerlink" href="#id2" title="Ссылка на этот заголовок">#</a></h2>
 <p>Расположение исходных снимков и предобработанных снимков должно выглядеть следующим образом</p>
-<p>project</p>
-<p>│</p>
-<dl>
-<dt>└───images_folder</dt><dd><p>│</p>
-<p>└───class1_images</p>
-<p>│       image1</p>
-<p>│       image2</p>
-<p>│       …</p>
-<p>└───class2_images</p>
-<p>│       image1</p>
-<p>│       image2</p>
-<p>│       …</p>
-<p>└───class3_images</p>
-<p>│       image1</p>
-<p>│       image2</p>
-<p>│       …</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>project
+│
+└───images_folder
+   │
+   └───class1_images
+   │       image1
+   │       image2
+   │       ...
+   └───class2_images
+   │       image1
+   │       image2
+   │       ...
+   └───class3_images
+   │       image1
+   │       image2
+   │       ...
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">utils</span><span class="o">.</span><span class="n">grainPreprocess</span><span class="o">.</span><span class="n">imdivide</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Разделяет входное изображение по середине и возвращает левую или правую часть</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="lumache.get_random_ingredients">
+<span class="sig-prename descclassname"><span class="pre">lumache.</span></span><span class="sig-name descname"><span class="pre">get_random_ingredients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lumache.get_random_ingredients" title="Ссылка на это определение">#</a></dt>
+<dd><p>Return a list of random ingredients as strings.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (height,width,channels)</p>
+</dd>
+<dt class="field-even">param h</dt>
+<dd class="field-even"><p>int scalar</p>
+</dd>
+<dt class="field-odd">param k</dt>
+<dd class="field-odd"><p>float scalar</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (height,width/2,channels)</p>
+</dd>
+<dt class="field-odd">param kind</dt>
+<dd class="field-odd"><p>Optional «kind» of ingredients.</p>
 </dd>
 </dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Результат</dt>
+<dd class="field-odd"><p>The ingredients list.</p>
+</dd>
+<dt class="field-even">Тип результата</dt>
+<dd class="field-even"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 </section>
 

@@ -1,8 +1,5 @@
-Preprocess
-**********
-
 Предобработка изображений
--------------------------
+=========================
 
 Описанные инструменты разработаны для обработки SEM снимков.
 
@@ -46,39 +43,48 @@ Preprocess
 
 Расположение исходных снимков и предобработанных снимков должно выглядеть следующим образом
 
+::
 
-project
+    project
+    │
+    └───images_folder
+       │
+       └───class1_images
+       │       image1
+       │       image2
+       │       ...
+       └───class2_images
+       │       image1
+       │       image2
+       │       ...
+       └───class3_images
+       │       image1
+       │       image2
+       │       ...
 
-│
+::
 
-└───images_folder
-   │
-   
-   └───class1_images
-   
-   │       image1
-   
-   │       image2
-   
-   │       ...
-   
-   └───class2_images
-   
-   │       image1
-   
-   │       image2
-   
-   │       ...
-   
-   └───class3_images
-   
-   │       image1
-   
-   │       image2
-   
-   │       ...
+    utils.grainPreprocess.imdivide(image, h, side)
+
+Разделяет входное изображение по середине и возвращает левую или правую часть
+
+.. py:function:: lumache.get_random_ingredients(kind=None)
+
+   Return a list of random ingredients as strings.
+
+	:param image: ndarray (height,width,channels)
+	:param h: int scalar
+	:param k: float scalar
+	:return: ndarray (height,width/2,channels)
+	
+	:param kind: Optional "kind" of ingredients.
+   :type kind: list[str] or None
+   :return: The ingredients list.
+   :rtype: list[str]
 
 
-
-
+.. automodule:: src.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
