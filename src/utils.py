@@ -55,6 +55,30 @@ file_path = os.getcwd() + '/utils.py'
 class grainPreprocess():
 
     @classmethod
+    def image_preprocess_kmeans(cls, image: np.ndarray, h=135, k=1, n_clusters=3, pos=1) -> np.ndarray:
+        """
+        :param image: array (height,width,channels)
+        :param h: int scalar
+        :param k: float scalar
+        :param n_clusters: int scalar
+        :param pos: int scalar, cluster index
+        :return: ndarray (height,width)
+        """
+        #
+        # выделение границ при помощи кластеризации
+        # и выравнивание шума медианным фильтром
+        # pos отвечает за выбор кластера, который будет отображен на возвращенном изображении
+        #
+        combined = cls.combine(image, h, k)
+
+        clustered, colors = grainMorphology.kmeans_image(combined, n_clusters)
+        cluster = clustered == colors[pos]
+        cluster = np.array(cluster * 255, dtype='uint8')
+
+        new_image = filters.median(cluster, disk(2))
+        return new_image
+
+    @classmethod
     def imdivide(cls, image: np.ndarray, h: int, side: str) -> np.ndarray:
         """
         :param image: ndarray (height,width,channels)
@@ -112,13 +136,15 @@ class grainPreprocess():
     def image_preprocess(cls, image: np.ndarray) -> np.ndarray:
         """
         :param image: ndarray (height,width,channels)
-        :return: ndarray (height,width)
+        :return: ndarray (height,width,1)
         """
         #
-        # комбинация медианного фильтра, биноризации и гражиента
+        # комбинация медианного фильтра, биноризации и градиента
         # у зерен значение пикселя - 0, у регионов связ. в-ва - 127,а у их границы - 254
         #
         unsigned_image = util.img_as_ubyte(image)
+        if len(unsigned_image.shape) < 3:
+            unsigned_image = unsigned_image[..., np.newaxis]
         denoised = filters.rank.median(unsigned_image, ball(3))
         binary = cls.do_otsu(denoised)
         grad = abs(filters.rank.gradient(binary, ball(1)))
@@ -126,29 +152,6 @@ class grainPreprocess():
 
         return bin_grad.astype(np.uint8)
 
-    @classmethod
-    def image_preprocess_kmeans(cls, image: np.ndarray, h=135, k=1, n_clusters=3, pos=1) -> np.ndarray:
-        """
-        :param image: array (height,width,channels)
-        :param h: int scalar
-        :param k: float scalar
-        :param n_clusters: int scalar
-        :param pos: int scalar, cluster index
-        :return: ndarray (height,width)
-        """
-        #
-        # выделение границ при помощи кластеризации 
-        # и выравнивание шума медианным фильтром
-        # pos отвечает за выбор кластера, который будет отображен на возвращенном изображении
-        #
-        combined = cls.combine(image, h, k)
-
-        clustered, colors = grainMorphology.kmeans_image(combined, n_clusters)
-        cluster = clustered == colors[pos]
-        cluster = np.array(cluster * 255, dtype='uint8')
-
-        new_image = filters.median(cluster, disk(2))
-        return new_image
 
     @classmethod
     def read_preprocess_data(cls, images_dir, max_images_num_per_class=100, preprocess=False, save=False,
@@ -236,7 +239,7 @@ class grainPreprocess():
             logger.warning(f'downloading {url}')
             file = requests.get(url, stream=True).raw
             img = np.asarray(Image.open(file))
-            images.append([img])
+            images.append(img)
 
         return np.array(images)
 
