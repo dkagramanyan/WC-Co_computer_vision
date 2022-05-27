@@ -152,12 +152,23 @@ class grainPreprocess():
 
         return bin_grad.astype(np.uint8)
 
-
     @classmethod
     def read_preprocess_data(cls, images_dir, max_images_num_per_class=100, preprocess=False, save=False,
                              crop_bottom=False,
                              h=135, resize=True, resize_shape=None,
                              save_name='all_images.npy'):
+        """
+        :param images_dir: str
+        :param max_images_num_per_class: int
+        :param preprocess: Bool
+        :param save: Bool
+        :param crop_bottom: Bool
+        :param h: int
+        :param resize: Bool
+        :param resize_shape: tuple (width, height, channels)
+        :param save_name: str
+        :return: ndarray (n_classes, n_images_per_class, width, height, channels)
+        """
 
         folders_names = glob.glob(images_dir + '*')
         images_paths = [glob.glob(folder_name + '/*')[:max_images_num_per_class] for folder_name in folders_names]
@@ -202,6 +213,13 @@ class grainPreprocess():
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
+        """
+        :param folder_path: str
+        :param start_name: int
+        :param stop_name: int
+        :param new_folder_path: str
+        :return: None
+        """
         #
         # переводит из tiff 2^16 в jpg 2^8 бит
         #
@@ -248,6 +266,11 @@ class grainMorphology():
 
     @classmethod
     def kmeans_image(cls, image, n_clusters=3):
+        """
+        :param image: ndarray (width, height, channels)
+        :param n_clusters: int
+        :return: (image, colors),colors - list of median colors of the clusters
+        """
         #
         # кластеризует при помощи kmeans
         # и возвращает изображение с нанесенными цветами кластеров
@@ -276,8 +299,13 @@ class grainFig():
 
     @classmethod
     def line(cls, point1, point2):
+        """
+        :param point1: tuple (int, int)
+        :param point2: tuple (int, int)
+        :return: ndarray (n_points,(x,y))
+        """
         #
-        # возвращает растровые координаты прямой между двумя точками 
+        # возвращает растровые координаты прямой между двумя точками при помощи алгоритма Брезенхема
         #
         line = []
 
@@ -320,6 +348,12 @@ class grainFig():
 
     @classmethod
     def rect(cls, point1, point2, r):
+        """
+        :param point1: tuple (int, int)
+        :param point2: tuple (int, int)
+        :param r: int
+        :return: tuple (n_points, rect_diag*2,2 )
+        """
         #
         # возвращает растровые координаты прямоугольника ширины 2r,
         # построеного между двумя точками 
@@ -338,6 +372,7 @@ class grainFig():
         side = cls.line(a, b)
 
         # a -> c
+        # зачем умножать l_len на 2 ?
         lines = np.zeros((side.shape[0], l_len * 2, 2), dtype='int64')
 
         for i, left_point in enumerate(side):
@@ -352,8 +387,16 @@ class grainFig():
 class grainMark():
     @classmethod
     def mark_corners_and_classes(cls, image, max_num=100000, sens=0.1, max_dist=1):
+        """
+        :param image: ndarray (width, height, channels)
+        :param max_num: int
+        :param sens: float
+        :param max_dist: int
+        :return: corners, classes, num
+        """
         #
         # НЕТ ГАРАНТИИ РАБОТЫ
+        # возвращает всевозможные координаты углов и исходное изображение с нанесенными классами клстеров градиента
         #
         corners = cv2.goodFeaturesToTrack(image, max_num, sens, max_dist)
         corners = np.int0(corners)
@@ -367,7 +410,17 @@ class grainMark():
 
     @classmethod
     def mean_pixel(cls, image, point1, point2, r):
-
+        """
+        :param image: ndarray (width, height, channels)
+        :param point1: tuple (int, int)
+        :param point2: tuple (int, int)
+        :param r: int
+        :return: mean, dist
+        """
+        #
+        # НЕТ ГАРАНТИИ РАБОТЫ
+        # возвращает среднее значение пикселей прямоугольника ширины 2r, построеного между двумя точками
+        #
         val2, num2 = cls.draw_rect(image, point2, point1, r)
         val = val1 + val2
         num = num1 + num2

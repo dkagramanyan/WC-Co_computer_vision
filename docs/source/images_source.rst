@@ -12,4 +12,4 @@
 .. figure::  https://pobedit.s3.us-east-2.amazonaws.com/docs_images/Ultra_Co15.jpg
    :align:   center
 
-   ПРимер SEM изображения микроструктуры сплава WC-Co
+   Пример SEM изображения микроструктуры сплава WC-Co

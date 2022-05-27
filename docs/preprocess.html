@@ -94,6 +94,11 @@
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="install.html">
+   Установка
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="alloy.html">
    Образцы сплава
   </a>
@@ -300,6 +305,11 @@ title="Print to PDF"
    Расположение снимков
   </a>
  </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#grainpreprocess">
+   Класс grainPreprocess
+  </a>
+ </li>
 </ul>
 
     </nav>
@@ -322,6 +332,11 @@ title="Print to PDF"
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#id2">
    Расположение снимков
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#grainpreprocess">
+   Класс grainPreprocess
   </a>
  </li>
 </ul>
@@ -385,14 +400,35 @@ img=grainPreprocess.image_preprocess(img,h,k)</p>
    │       ...
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">utils</span><span class="o">.</span><span class="n">grainPreprocess</span><span class="o">.</span><span class="n">imdivide</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Разделяет входное изображение по середине и возвращает левую или правую часть</p>
+</section>
+<section id="grainpreprocess">
+<h2>Класс grainPreprocess<a class="headerlink" href="#grainpreprocess" title="Ссылка на этот заголовок">#</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="lumache.get_random_ingredients">
-<span class="sig-prename descclassname"><span class="pre">lumache.</span></span><span class="sig-name descname"><span class="pre">get_random_ingredients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lumache.get_random_ingredients" title="Ссылка на это определение">#</a></dt>
-<dd><p>Return a list of random ingredients as strings.</p>
+<dt class="sig sig-object py" id="imdivide">
+<span class="sig-name descname"><span class="pre">imdivide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#imdivide" title="Ссылка на это определение">#</a></dt>
+<dd><p>Разделяет входное изображение по середине и возвращает левую или правую часть</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (height,width,channels)</p>
+</dd>
+<dt class="field-even">param h</dt>
+<dd class="field-even"><p>int scalar</p>
+</dd>
+<dt class="field-odd">param side</dt>
+<dd class="field-odd"><p>float scalar</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (height,width/2,channels)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="combine">
+<span class="sig-name descname"><span class="pre">combine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#combine" title="Ссылка на это определение">#</a></dt>
+<dd><p>Накладывает левую и правые части изображения. Если k=1, то на выходе будет левая часть изображения, если k=0, то будет правая часть</p>
 <blockquote>
 <div><dl class="field-list simple">
 <dt class="field-odd">param image</dt>
@@ -407,19 +443,149 @@ img=grainPreprocess.image_preprocess(img,h,k)</p>
 <dt class="field-even">return</dt>
 <dd class="field-even"><p>ndarray (height,width/2,channels)</p>
 </dd>
-<dt class="field-odd">param kind</dt>
-<dd class="field-odd"><p>Optional «kind» of ingredients.</p>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="do_otsu">
+<span class="sig-name descname"><span class="pre">do_otsu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#do_otsu" title="Ссылка на это определение">#</a></dt>
+<dd><p>Бинаризация Отсу</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param img</dt>
+<dd class="field-odd"><p>ndarray (height,width,channels)</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (height,width), Boolean</p>
 </dd>
 </dl>
 </div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Результат</dt>
-<dd class="field-odd"><p>The ingredients list.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="image_preprocess">
+<span class="sig-name descname"><span class="pre">image_preprocess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#image_preprocess" title="Ссылка на это определение">#</a></dt>
+<dd><p>Комбинация медианного фильтра, биноризации и градиента. У зерен значение пикселя - 0, у регионов связ. в-ва - 127,а у их границы - 254.
+Обраотанное изображение получается следующим образом: 1-Otsu(median_filter(image))+grad(Otsu(median_filter(image)))</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param img</dt>
+<dd class="field-odd"><p>ndarray (height,width,channels)</p>
 </dd>
-<dt class="field-even">Тип результата</dt>
-<dd class="field-even"><p>list[str]</p>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (height,width,1)</p>
 </dd>
 </dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="read_preprocess_data">
+<span class="sig-name descname"><span class="pre">read_preprocess_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_images_num_per_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preprocess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crop_bottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">135</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resize_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all_images.npy'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#read_preprocess_data" title="Ссылка на это определение">#</a></dt>
+<dd><p>Считывание всего датасета, обработка и сохрание в .npy файл</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param images_dir</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">param max_images_num_per_class</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param preprocess</dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+<dt class="field-even">param save</dt>
+<dd class="field-even"><p>Bool</p>
+</dd>
+<dt class="field-odd">param crop_bottom</dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+<dt class="field-even">param h</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param resize</dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+<dt class="field-even">param resize_shape</dt>
+<dd class="field-even"><p>tuple (width, height, channels)</p>
+</dd>
+<dt class="field-odd">param save_name</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (n_classes, n_images_per_class, width, height, channels)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tiff2jpg">
+<span class="sig-name descname"><span class="pre">tiff2jpg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_folder_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resized'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiff2jpg" title="Ссылка на это определение">#</a></dt>
+<dd><p>Переводит из tiff 2^16 в jpg 2^8 бит</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param folder_path</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">param start_name</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param stop_name</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">param new_folder_path</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="get_example_images">
+<span class="sig-name descname"><span class="pre">get_example_images</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#get_example_images" title="Ссылка на это определение">#</a></dt>
+<dd><p>Скачивает из контейнера s3 по 1 снимку каждого образца</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>ndarray [[img1],[img2]..]</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="image_preprocess_kmeans">
+<span class="sig-name descname"><span class="pre">image_preprocess_kmeans</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">135</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_clusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#image_preprocess_kmeans" title="Ссылка на это определение">#</a></dt>
+<dd><p>Выделение границ при помощи кластеризации и выравнивание шума медианным фильтром. Подходит только
+для смазанных фотограий, где границы у объектов достатчно широкие.
+Pos отвечает за выбор кластера, который будет отображен на возвращенном изображении</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>array (height,width,channels)</p>
+</dd>
+<dt class="field-even">param h</dt>
+<dd class="field-even"><p>int scalar</p>
+</dd>
+<dt class="field-odd">param k</dt>
+<dd class="field-odd"><p>float scalar</p>
+</dd>
+<dt class="field-even">param n_clusters</dt>
+<dd class="field-even"><p>int scalar</p>
+</dd>
+<dt class="field-odd">param pos</dt>
+<dd class="field-odd"><p>int scalar, cluster index</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (height,width)</p>
+</dd>
+</dl>
+</div></blockquote>
 </dd></dl>
 
 </section>

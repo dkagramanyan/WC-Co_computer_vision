@@ -62,29 +62,93 @@
        │       image2
        │       ...
 
-::
 
-    utils.grainPreprocess.imdivide(image, h, side)
 
-Разделяет входное изображение по середине и возвращает левую или правую часть
+Класс grainPreprocess
+---------------------
 
-.. py:function:: lumache.get_random_ingredients(kind=None)
+.. py:function::  imdivide(image, h, side)
 
-   Return a list of random ingredients as strings.
+   Разделяет входное изображение по середине и возвращает левую или правую часть
+
+	:param image: ndarray (height,width,channels)
+	:param h: int scalar
+	:param side: float scalar
+	:return: ndarray (height,width/2,channels)
+	
+	
+.. py:function::  combine(image, h, k=0.5)
+
+   Накладывает левую и правые части изображения. Если k=1, то на выходе будет левая часть изображения, если k=0, то будет правая часть
 
 	:param image: ndarray (height,width,channels)
 	:param h: int scalar
 	:param k: float scalar
 	:return: ndarray (height,width/2,channels)
 	
-	:param kind: Optional "kind" of ingredients.
-   :type kind: list[str] or None
-   :return: The ingredients list.
-   :rtype: list[str]
+.. py:function::  do_otsu(image)
 
+   Бинаризация Отсу
 
-.. automodule:: src.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
+	:param img: ndarray (height,width,channels)
+	:return: ndarray (height,width), Boolean
+	
+
+.. py:function::  image_preprocess(image)
+
+	Комбинация медианного фильтра, биноризации и градиента. У зерен значение пикселя - 0, у регионов связ. в-ва - 127,а у их границы - 254.
+	Обраотанное изображение получается следующим образом: 1-Otsu(median_filter(image))+grad(Otsu(median_filter(image)))
+
+	
+	 :param img: ndarray (height,width,channels)
+	 :return: ndarray (height,width,1)
+	 
+.. py:function::  read_preprocess_data(images_dir, max_images_num_per_class=100, preprocess=False, save=False, crop_bottom=False, h=135, resize=True, resize_shape=None, save_name='all_images.npy')
+
+   Считывание всего датасета, обработка и сохрание в .npy файл
+
+        :param images_dir: str
+        :param max_images_num_per_class: int
+        :param preprocess: Bool
+        :param save: Bool
+        :param crop_bottom: Bool
+        :param h: int
+        :param resize: Bool
+        :param resize_shape: tuple (width, height, channels)
+        :param save_name: str
+        :return: ndarray (n_classes, n_images_per_class, width, height, channels)
+		
+.. py:function::  tiff2jpg( folder_path, start_name=0, stop_name=-4, new_folder_path='resized')
+
+   Переводит из tiff 2^16 в jpg 2^8 бит
+
+        :param folder_path: str
+        :param start_name: int
+        :param stop_name: int
+        :param new_folder_path: str
+        :return: None
+	
+.. py:function::  get_example_images()
+
+   Скачивает из контейнера s3 по 1 снимку каждого образца
+
+        :return: ndarray [[img1],[img2]..]
+
+.. py:function:: image_preprocess_kmeans(image, h=135, k=1, n_clusters=3, pos=1)
+
+   Выделение границ при помощи кластеризации и выравнивание шума медианным фильтром. Подходит только 
+   для смазанных фотограий, где границы у объектов достатчно широкие. 
+   Pos отвечает за выбор кластера, который будет отображен на возвращенном изображении
+
+        :param image: array (height,width,channels)
+        :param h: int scalar
+        :param k: float scalar
+        :param n_clusters: int scalar
+        :param pos: int scalar, cluster index
+        :return: ndarray (height,width)
+	
+	
+	
+	
+
 

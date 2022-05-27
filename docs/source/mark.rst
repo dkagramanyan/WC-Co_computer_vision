@@ -41,3 +41,27 @@ Mark
 
 .. image:: https://pobedit.s3.us-east-2.amazonaws.com/docs_images/enclosed-ellipse.png
     :align:   center
+	
+
+Класс grainMark
+---------------
+
+.. py:function::  mark_corners_and_classes(image, max_num=100000, sens=0.1, max_dist=1)
+
+     (**Deprecated**) Возвращает всевозможные координаты углов и исходное изображение с нанесенными классами кластеров градиента 
+
+        :param image: ndarray (width, height, channels)
+        :param max_num: int
+        :param sens: float
+        :param max_dist: int
+        :return: corners, classes, num
+		
+.. py:function::  mean_pixel(image, point1, point2, r)
+
+     (**Deprecated**) Возвращает среднее значение пикселей прямоугольника ширины 2r, построеного между двумя точками 
+	 
+        :param image: ndarray (width, height, channels)
+        :param point1: tuple (int, int)
+        :param point2: tuple (int, int)
+        :param r: int
+        :return: mean, dist

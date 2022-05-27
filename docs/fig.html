@@ -94,6 +94,11 @@
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="install.html">
+   Установка
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="alloy.html">
    Образцы сплава
   </a>
@@ -299,6 +304,47 @@ title="Print to PDF"
                 
   <section id="fig">
 <h1>Fig<a class="headerlink" href="#fig" title="Ссылка на этот заголовок">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="line">
+<span class="sig-name descname"><span class="pre">line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#line" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает растровые координаты прямой между двумя точками при помощи алгоритма <a class="reference external" href="https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm">Брезенхема</a></p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param point1</dt>
+<dd class="field-odd"><p>tuple (int, int)</p>
+</dd>
+<dt class="field-even">param point2</dt>
+<dd class="field-even"><p>tuple (int, int)</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>ndarray (n_points,(x,y))</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="rect">
+<span class="sig-name descname"><span class="pre">rect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#rect" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает растровые координаты прямоугольника ширины 2r, построеного между двумя точками. Не ясно зачем умножать в размерность на 2.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param point1</dt>
+<dd class="field-odd"><p>tuple (int, int)</p>
+</dd>
+<dt class="field-even">param point2</dt>
+<dd class="field-even"><p>tuple (int, int)</p>
+</dd>
+<dt class="field-odd">param r</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>tuple (n_points, rect_diag*2,2 )</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
 </section>
 
 

@@ -17,6 +17,7 @@
    :caption: Содержание:
    
    introduction
+   install
    alloy
    images_source
    preprocess

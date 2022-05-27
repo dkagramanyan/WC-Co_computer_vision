@@ -94,6 +94,11 @@
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="install.html">
+   Установка
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="alloy.html">
    Образцы сплава
   </a>
@@ -305,6 +310,11 @@ title="Print to PDF"
    Вписывание регионов Co в эллипс
   </a>
  </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#grainmark">
+   Класс grainMark
+  </a>
+ </li>
 </ul>
 
     </nav>
@@ -332,6 +342,11 @@ title="Print to PDF"
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#id1">
    Вписывание регионов Co в эллипс
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#grainmark">
+   Класс grainMark
   </a>
  </li>
 </ul>
@@ -374,6 +389,59 @@ title="Print to PDF"
 . Параметры эллипсоида подбираются так, чтобы заданные точки находились внутри фигуры, а ее геометрические
 характеристики были наименьшими.</p>
 <img alt="https://pobedit.s3.us-east-2.amazonaws.com/docs_images/enclosed-ellipse.png" class="align-center" src="https://pobedit.s3.us-east-2.amazonaws.com/docs_images/enclosed-ellipse.png" />
+</section>
+<section id="grainmark">
+<h2>Класс grainMark<a class="headerlink" href="#grainmark" title="Ссылка на этот заголовок">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="mark_corners_and_classes">
+<span class="sig-name descname"><span class="pre">mark_corners_and_classes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sens</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_dist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mark_corners_and_classes" title="Ссылка на это определение">#</a></dt>
+<dd><p>(<strong>Deprecated</strong>) Возвращает всевозможные координаты углов и исходное изображение с нанесенными классами кластеров градиента</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height, channels)</p>
+</dd>
+<dt class="field-even">param max_num</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param sens</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param max_dist</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>corners, classes, num</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mean_pixel">
+<span class="sig-name descname"><span class="pre">mean_pixel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mean_pixel" title="Ссылка на это определение">#</a></dt>
+<dd><p>(<strong>Deprecated</strong>) Возвращает среднее значение пикселей прямоугольника ширины 2r, построеного между двумя точками</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height, channels)</p>
+</dd>
+<dt class="field-even">param point1</dt>
+<dd class="field-even"><p>tuple (int, int)</p>
+</dd>
+<dt class="field-odd">param point2</dt>
+<dd class="field-odd"><p>tuple (int, int)</p>
+</dd>
+<dt class="field-even">param r</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>mean, dist</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
 </section>
 </section>
 

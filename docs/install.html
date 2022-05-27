@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Morphology &#8212; документация wc_cv v0.1</title>
+    <title>Установка &#8212; документация wc_cv v0.1</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -34,8 +34,8 @@
     <script src="_static/translations.js"></script>
     <link rel="index" title="Алфавитный указатель" href="genindex.html" />
     <link rel="search" title="Поиск" href="search.html" />
-    <link rel="next" title="Fig" href="fig.html" />
-    <link rel="prev" title="Предобработка изображений" href="preprocess.html" />
+    <link rel="next" title="Образцы сплава" href="alloy.html" />
+    <link rel="prev" title="Введение" href="introduction.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="ru">
     
@@ -93,8 +93,8 @@
    Введение
   </a>
  </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="install.html">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
    Установка
   </a>
  </li>
@@ -113,8 +113,8 @@
    Предобработка изображений
   </a>
  </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
+ <li class="toctree-l1">
+  <a class="reference internal" href="morphology.html">
    Morphology
   </a>
  </li>
@@ -241,7 +241,7 @@ title="Fullscreen mode"
   <div class="menu-dropdown__content">
     <ul>
       <li>
-        <a href="_sources/morphology.rst.txt"
+        <a href="_sources/install.rst.txt"
    class="headerbtn"
    data-toggle="tooltip"
 data-placement="left"
@@ -290,7 +290,7 @@ title="Print to PDF"
         <div class="col pl-md-3 pl-lg-5 content-container">
             <!-- Table of contents that is only displayed when printing the page -->
             <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Morphology</h1>
+                <h1>Установка</h1>
                 <!-- Table of contents -->
                 <div id="print-main-content">
                     <div id="jb-print-toc">
@@ -302,27 +302,23 @@ title="Print to PDF"
                 
               <div>
                 
-  <section id="morphology">
-<h1>Morphology<a class="headerlink" href="#morphology" title="Ссылка на этот заголовок">#</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="kmeans_image">
-<span class="sig-name descname"><span class="pre">kmeans_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_clusters</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kmeans_image" title="Ссылка на это определение">#</a></dt>
-<dd><p>Кластеризует при помощи kmeans и возвращает изображение с нанесенными цветами кластеров</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">param image</dt>
-<dd class="field-odd"><p>ndarray (width, height, channels)</p>
-</dd>
-<dt class="field-even">param n_clusters</dt>
-<dd class="field-even"><p>int</p>
-</dd>
-<dt class="field-odd">return</dt>
-<dd class="field-odd"><p>(image, colors),colors - list of median colors of the clusters</p>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
+  <section id="id1">
+<h1>Установка<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">#</a></h1>
+<p>Для работы с программным комплексом склонируйте <a class="reference external" href="https://github.com/dkagramanyan/wc_cv">репозиторий</a> и установите модули
+из файла requirements. Требуемая версия  Python - 3.X.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">dkagramanyan</span><span class="o">/</span><span class="n">wc_cv</span>
+<span class="n">cd</span> <span class="n">wc_cv</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">requirnments</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Тестовые изображения находятся в хранилище s3 по адресам</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co11.jpg">https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co11.jpg</a></p></li>
+<li><p><a class="reference external" href="https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co15.jpg">https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co15.jpg</a></p></li>
+<li><p><a class="reference external" href="https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co25.jpg">https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co25.jpg</a></p></li>
+<li><p><a class="reference external" href="https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co6_2.jpg">https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co6_2.jpg</a></p></li>
+<li><p><a class="reference external" href="https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co8.jpg">https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co8.jpg</a></p></li>
+</ol>
 </section>
 
 
@@ -333,17 +329,17 @@ title="Print to PDF"
                 
     <!-- Previous / next buttons -->
 <div class='prev-next-area'>
-    <a class='left-prev' id="prev-link" href="preprocess.html" title="назад страница">
+    <a class='left-prev' id="prev-link" href="introduction.html" title="назад страница">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">назад</p>
-            <p class="prev-next-title">Предобработка изображений</p>
+            <p class="prev-next-title">Введение</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="fig.html" title="вперёд страница">
+    <a class='right-next' id="next-link" href="alloy.html" title="вперёд страница">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">вперёд</p>
-        <p class="prev-next-title">Fig</p>
+        <p class="prev-next-title">Образцы сплава</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
