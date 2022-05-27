@@ -442,6 +442,97 @@ title="Print to PDF"
 </div></blockquote>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="get_row_contours">
+<span class="sig-name descname"><span class="pre">get_row_contours</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_row_contours" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает кооридинаты пикселей контуров каждого региона</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height,3)</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>list (N_contours, (M_points,2) )</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="get_contours">
+<span class="sig-name descname"><span class="pre">get_contours</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">cls</span></em>, <em class="sig-param"><span class="pre">image</span></em>, <em class="sig-param"><span class="pre">tol=3)(image</span></em>, <em class="sig-param"><span class="pre">point1</span></em>, <em class="sig-param"><span class="pre">point2</span></em>, <em class="sig-param"><span class="pre">r</span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_contours" title="Ссылка на это определение">#</a></dt>
+<dd><p>Уменьшение количества точек контура при помощи алгоритма Дугласа-Пекера</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height,3)</p>
+</dd>
+<dt class="field-even">param tol</dt>
+<dd class="field-even"><p>int Maximum distance from original points of polygon to approximated polygonal chain</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>list (N_contours, (M_points,2) )</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="get_angles">
+<span class="sig-name descname"><span class="pre">get_angles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_angles" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает углы с направлением обхода контура против часовой стрелки, углы &gt;180 градусов учитываются.
+На вход принимает только обработанное изображение</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height,1), only preprocessed image</p>
+</dd>
+<dt class="field-even">param thr</dt>
+<dd class="field-even"><p>int, distance from original image edge to inner image edge (rect in rect)</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>angles ndarray (n), angles coords list (n_angles, 2)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="get_mvee_params">
+<span class="sig-name descname"><span class="pre">get_mvee_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_mvee_params" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает полуоси и угол поворота фигуры minimal volume enclosing ellipsoid, которая ограничивает исходные точки контура эллипсом. Для расчетов центр координатной оси сдвигается на центроид полигона (исследуемого региона), а затем сдвигается на среднее значение координат полигона</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height,1), only preprocessed image</p>
+</dd>
+<dt class="field-even">param tol</dt>
+<dd class="field-even"><p>int, koef of ellipse compactness</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>ndarray a_beams, b_beams, angles, centroids</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gskeletons_coords">
+<span class="sig-name descname"><span class="pre">gskeletons_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gskeletons_coords" title="Ссылка на это определение">#</a></dt>
+<dd><p>На вход подается бинаризованное изображение создает массив индивидуальных скелетов пикселю скелета дается класс,
+на координатах которого он находится. Координаты класса определяются ndi.label</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height,1)</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>bones</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
 </section>
 </section>
 

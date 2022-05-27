@@ -437,11 +437,10 @@ class grainMark():
     def get_row_contours(cls, image):
         """
         :param image: ndarray (width, height,3)
-        :return: list (N_contours,M_points,2)
-            where ndarray (M_points,2)
+        :return: list (N_contours, (M_points,2) )
         """
         #
-        # возвращает набор точек контуров 
+        # Возвращает кооридинаты пикселей контуров каждого региона
         #
         edges = cv2.Canny(image, 0, 255, L2gradient=False)
 
@@ -455,10 +454,9 @@ class grainMark():
     @classmethod
     def get_contours(cls, image, tol=3):
         """
-        :param tol:
         :param image: ndarray (width, height,3)
-        :return: list (N_contours,M_points,2)
-            where ndarray (M_points,2)
+        :param tol: int Maximum distance from original points of polygon to approximated polygonal chain
+        :return: list (N_contours, (M_points,2) )
         """
         #
         # уменьшение количества точек контура при помощи алгоритма Дугласа-Пекера
@@ -477,8 +475,14 @@ class grainMark():
 
     @classmethod
     def get_angles(cls, image, thr=5):
+        """
+        :param image: ndarray (width, height,1), only preprocessed image
+        :param thr: int, distance from original image edge to inner image edge (rect in rect)
+        :return: angles ndarray (n), angles coords list (n_angles, 2)
+        """
         #
-        # считаем углы с направлением обхода контура против часовой стрелки, углы >180 градусов учитываются
+        # Возвращает углы с направлением обхода контура против часовой стрелки, углы >180 градусов учитываются.
+        # На вход принимает только обработанное изображение
         #
         approx = cls.get_contours(image, tol=4)
 
@@ -531,13 +535,15 @@ class grainMark():
     @classmethod
     def get_mvee_params(cls, image, tol=0.2, debug=False):
         """
-        :param image:
-        :param tol:
-        :return: ndarray (n_angles), radian
+        :param image: ndarray (width, height,1), only preprocessed image
+        :param tol: int, koef of ellipse compactness
+        :return: ndarray a_beams, b_beams, angles, centroids
         """
         #
         # возвращает полуоси и угол поворота фигуры minimal volume enclosing ellipsoid,
-        # которая ограничивает исходные точки контура эллипсом
+        # которая ограничивает исходные точки контура эллипсом. Для расчетов центр координатной оси
+        # сдвигается на центроид полигона (исследуемого региона),
+        # а затем сдвигается на среднее значение координат полигона
         # 
         approx = grainMark.get_row_contours(image)
         a_beams = []
@@ -581,6 +587,10 @@ class grainMark():
 
     @classmethod
     def skeletons_coords(cls, image):
+        """
+        :param image: ndarray (width, height,1)
+        :return: bones
+        """
         #
         # на вход подается бинаризованное изображение
         # создает массив индивидуальных скелетов

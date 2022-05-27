@@ -65,3 +65,45 @@ Mark
         :param point2: tuple (int, int)
         :param r: int
         :return: mean, dist
+
+
+.. py:function::  get_row_contours(image)
+
+    Возвращает кооридинаты пикселей контуров каждого региона 
+	 
+        :param image: ndarray (width, height,3)
+        :return: list (N_contours, (M_points,2) )
+
+.. py:function::  get_contours(cls, image, tol=3)(image, point1, point2, r)
+
+    Уменьшение количества точек контура при помощи алгоритма Дугласа-Пекера
+	 
+        :param image: ndarray (width, height,3)
+        :param tol: int Maximum distance from original points of polygon to approximated polygonal chain
+        :return: list (N_contours, (M_points,2) )
+
+.. py:function::  get_angles(image, thr=5)
+
+	Возвращает углы с направлением обхода контура против часовой стрелки, углы >180 градусов учитываются.
+	На вход принимает только обработанное изображение
+	
+		:param image: ndarray (width, height,1), only preprocessed image
+		:param thr: int, distance from original image edge to inner image edge (rect in rect)
+		:return: angles ndarray (n), angles coords list (n_angles, 2)
+		
+.. py:function::  get_mvee_params(image, tol=0.2, debug=False)
+
+    Возвращает полуоси и угол поворота фигуры minimal volume enclosing ellipsoid, которая ограничивает исходные точки контура эллипсом. Для расчетов центр координатной оси сдвигается на центроид полигона (исследуемого региона), а затем сдвигается на среднее значение координат полигона
+	 
+		:param image: ndarray (width, height,1), only preprocessed image
+		:param tol: int, koef of ellipse compactness
+		:return: ndarray a_beams, b_beams, angles, centroids
+
+.. py:function::  gskeletons_coords(image)
+
+	На вход подается бинаризованное изображение создает массив индивидуальных скелетов пикселю скелета дается класс,
+	на координатах которого он находится. Координаты класса определяются ndi.label
+	 
+	 :param image: ndarray (width, height,1)
+	 :return: bones
+		
