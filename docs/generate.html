@@ -94,6 +94,11 @@
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="install.html">
+   Установка
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="alloy.html">
    Образцы сплава
   </a>
@@ -299,6 +304,154 @@ title="Print to PDF"
                 
   <section id="generate">
 <h1>Generate<a class="headerlink" href="#generate" title="Ссылка на этот заголовок">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="angles_legend">
+<span class="sig-name descname"><span class="pre">angles_legend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images_amount</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#angles_legend" title="Ссылка на это определение">#</a></dt>
+<dd><p>Cоздание легенды распределения углов</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param images_amount</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">param name</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param itype</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">param step</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param mus</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param sigmas</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param amps</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param norm</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="angles_approx_save">
+<span class="sig-name descname"><span class="pre">angles_approx_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">types</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#angles_approx_save" title="Ссылка на это определение">#</a></dt>
+<dd><p>Вычисление и сохранение распределения углов для всех фотографий одного образца</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param folder</dt>
+<dd class="field-odd"><p>str path to dir</p>
+</dd>
+<dt class="field-even">param images</dt>
+<dd class="field-even"><p>ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]</p>
+</dd>
+<dt class="field-odd">param names</dt>
+<dd class="field-odd"><p>list str [class_name1,class_name2,..]</p>
+</dd>
+<dt class="field-even">param types</dt>
+<dd class="field-even"><p>list str [class_type1,class_type2,..]</p>
+</dd>
+<dt class="field-odd">param step</dt>
+<dd class="field-odd"><p>scalar int [0,N]</p>
+</dd>
+<dt class="field-even">param save</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="beams_legend">
+<span class="sig-name descname"><span class="pre">beams_legend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_mean</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#beams_legend" title="Ссылка на это определение">#</a></dt>
+<dd><p>Создание легенды для распределения длин полуосей</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param name</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">param itype</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param norm</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">param k</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param angle</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param b</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param score</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param dist_step</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param dist_mean</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="diametr_approx_save">
+<span class="sig-name descname"><span class="pre">diametr_approx_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">types</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#diametr_approx_save" title="Ссылка на это определение">#</a></dt>
+<dd><p>Вычисление и сохранение распределения длин а- и б- полуосей и угла поворота эллипса для разных образцов</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param folder</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">param images</dt>
+<dd class="field-even"><p>ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]</p>
+</dd>
+<dt class="field-odd">param names</dt>
+<dd class="field-odd"><p>list str [class_name1,class_name2,..]</p>
+</dd>
+<dt class="field-even">param types</dt>
+<dd class="field-even"><p>list str [class_type1,class_type2,..]</p>
+</dd>
+<dt class="field-odd">param step</dt>
+<dd class="field-odd"><p>scalar int [0,N]</p>
+</dd>
+<dt class="field-even">param pixel</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param start</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">param end</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param save</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+<dt class="field-even">param debug</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
 </section>
 
 

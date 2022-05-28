@@ -94,6 +94,11 @@
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="install.html">
+   Установка
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="alloy.html">
    Образцы сплава
   </a>
@@ -299,6 +304,78 @@ title="Print to PDF"
                 
   <section id="draw">
 <h1>Draw<a class="headerlink" href="#draw" title="Ссылка на этот заголовок">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="draw_corners">
+<span class="sig-name descname"><span class="pre">draw_corners</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">255</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#draw_corners" title="Ссылка на это определение">#</a></dt>
+<dd><p>Наносит на изображение точки в местах, где есть углы списка corners</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height, channels)</p>
+</dd>
+<dt class="field-even">param corners</dt>
+<dd class="field-even"><p>list (n_corners,2)</p>
+</dd>
+<dt class="field-odd">param color</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (width, height, channels)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="draw_edges">
+<span class="sig-name descname"><span class="pre">draw_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cnts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(50,</span> <span class="pre">50,</span> <span class="pre">50)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#draw_edges" title="Ссылка на это определение">#</a></dt>
+<dd><p>Рисует на изображении линии по точкам контура cnts,  линии в стиле x^1-&gt;x^2,x^2-&gt;x^3 и тд</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height, channels)</p>
+</dd>
+<dt class="field-even">param cnts</dt>
+<dd class="field-even"><p>ndarray (n_cnts,n,2)</p>
+</dd>
+<dt class="field-odd">param color</dt>
+<dd class="field-odd"><p>tuple (3,)</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (width, height, channels)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="draw_tree">
+<span class="sig-name descname"><span class="pre">draw_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centres</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leafs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bones</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#draw_tree" title="Ссылка на это определение">#</a></dt>
+<dd><p>На вход подается бинаризованное изображение. Рисует на инвертированном изображении скелет: точки их центров, листьев, узлов и пикселей скелета</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param img</dt>
+<dd class="field-odd"><p>ndarray (width, height)</p>
+</dd>
+<dt class="field-even">param centres</dt>
+<dd class="field-even"><p>Bool</p>
+</dd>
+<dt class="field-odd">param leafs</dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+<dt class="field-even">param nodes</dt>
+<dd class="field-even"><p>Bool</p>
+</dd>
+<dt class="field-odd">param bones</dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>ndarray (width, height, channels)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
 </section>
 
 

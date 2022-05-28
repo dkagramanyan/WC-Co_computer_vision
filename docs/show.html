@@ -94,6 +94,11 @@
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="install.html">
+   Установка
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="alloy.html">
    Образцы сплава
   </a>
@@ -299,6 +304,53 @@ title="Print to PDF"
                 
   <section id="show">
 <h1>Show<a class="headerlink" href="#show" title="Ссылка на этот заголовок">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="img_show">
+<span class="sig-name descname"><span class="pre">img_show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">plt.cm.nipy_spectral</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#img_show" title="Ссылка на это определение">#</a></dt>
+<dd><p>Выводит изображение image</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (height,width,channels)</p>
+</dd>
+<dt class="field-even">param N</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param cmap</dt>
+<dd class="field-odd"><p>plt cmap</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="enclosing_ellipse_show">
+<span class="sig-name descname"><span class="pre">enclosing_ellipse_show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#enclosing_ellipse_show" title="Ссылка на это определение">#</a></dt>
+<dd><p>Выводит точки многоугольника с позиции pos и описанного вокруг него эллипса</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (height,width,channels)</p>
+</dd>
+<dt class="field-even">param pos</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param tolerance</dt>
+<dd class="field-odd"><p>foat, koef of ellipse compactness</p>
+</dd>
+<dt class="field-even">param N</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
 </section>
 
 

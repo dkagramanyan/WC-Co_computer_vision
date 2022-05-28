@@ -94,6 +94,11 @@
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="install.html">
+   Установка
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="alloy.html">
    Образцы сплава
   </a>
@@ -299,6 +304,180 @@ title="Print to PDF"
                 
   <section id="stats">
 <h1>Stats<a class="headerlink" href="#stats" title="Ссылка на этот заголовок">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="kernel_points">
+<span class="sig-name descname"><span class="pre">kernel_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_points" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает координаты пикселей квадратной матрицы шириной 2*step, центр которой это point</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param image</dt>
+<dd class="field-odd"><p>ndarray (width, height)</p>
+</dd>
+<dt class="field-even">param point</dt>
+<dd class="field-even"><p>tuple (2,)</p>
+</dd>
+<dt class="field-odd">param step</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>tuple (n_points,2)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="stats_preprocess">
+<span class="sig-name descname"><span class="pre">stats_preprocess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#stats_preprocess" title="Ссылка на это определение">#</a></dt>
+<dd><p>Приведение углов к кратости, например 0,step,2*step и тд</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param array</dt>
+<dd class="field-odd"><p>list, ndarray (n,)</p>
+</dd>
+<dt class="field-even">param step</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>array_copy, array_copy_set, dens_curve</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gaussian">
+<span class="sig-name descname"><span class="pre">gaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gaussian" title="Ссылка на это определение">#</a></dt>
+<dd><p>Наносит на изображение точки в местах, где есть углы списка corners</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+<dt class="field-even">param mu</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param sigma</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param amp</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gaussian_bimodal">
+<span class="sig-name descname"><span class="pre">gaussian_bimodal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gaussian_bimodal" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает бимодальную нормальную фунцию по заданным параметрам</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+<dt class="field-even">param mu1</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param mu2</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param sigma1</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param sigma2</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param amp1</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param amp2</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>list (n,)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gaussian_termodal">
+<span class="sig-name descname"><span class="pre">gaussian_termodal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gaussian_termodal" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает термодальную нормальную фунцию по заданным параметрам</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+<dt class="field-even">param mu1</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param mu2</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param mu3</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param sigma1</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param sigma2</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param sigma3</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param amp1</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param amp2</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param amp3</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ellipse">
+<span class="sig-name descname"><span class="pre">ellipse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ellipse" title="Ссылка на это определение">#</a></dt>
+<dd><p>Возвращает координаты эллипса, построенного по заданным параметрам. По умолчанию центр (0,0). Угол в радианах, уменьшение угла обозначает поворот эллипса по часовой стрелке</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param a</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param b</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param angle</dt>
+<dd class="field-odd"><p>float, rad</p>
+</dd>
+<dt class="field-even">param xc</dt>
+<dd class="field-even"><p>float, center coord x</p>
+</dd>
+<dt class="field-odd">param yc</dt>
+<dd class="field-odd"><p>float, center coord y</p>
+</dd>
+<dt class="field-even">param num</dt>
+<dd class="field-even"><p>int, number of ellipse points</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>tuple (num, 2)</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
 </section>
 
 

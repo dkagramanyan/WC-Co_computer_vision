@@ -96,7 +96,7 @@ Mark
     Возвращает полуоси и угол поворота фигуры minimal volume enclosing ellipsoid, которая ограничивает исходные точки контура эллипсом. Для расчетов центр координатной оси сдвигается на центроид полигона (исследуемого региона), а затем сдвигается на среднее значение координат полигона
 	 
 		:param image: ndarray (width, height,1), only preprocessed image
-		:param tol: int, koef of ellipse compactness
+		:param tol: foat, koef of ellipse compactness
 		:return: ndarray a_beams, b_beams, angles, centroids
 
 .. py:function::  gskeletons_coords(image)

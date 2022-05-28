@@ -94,6 +94,11 @@
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="install.html">
+   Установка
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="alloy.html">
    Образцы сплава
   </a>
@@ -299,6 +304,155 @@ title="Print to PDF"
                 
   <section id="approximation">
 <h1>Approximation<a class="headerlink" href="#approximation" title="Ссылка на этот заголовок">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="gaussian_fit">
+<span class="sig-name descname"><span class="pre">gaussian_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gaussian_fit" title="Ссылка на это определение">#</a></dt>
+<dd><p>Аппроксимация заданных точек нормальной функцией</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+<dt class="field-even">param y</dt>
+<dd class="field-even"><p>list (n,)</p>
+</dd>
+<dt class="field-odd">param mu</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param sigma</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param amp</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>mus, sigmas, amps</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gaussian_fit_bimodal">
+<span class="sig-name descname"><span class="pre">gaussian_fit_bimodal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">240</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gaussian_fit_bimodal" title="Ссылка на это определение">#</a></dt>
+<dd><p>Аппроксимация заданных точек бимодальной нормальной функцией</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+<dt class="field-even">param y</dt>
+<dd class="field-even"><p>list (n,)</p>
+</dd>
+<dt class="field-odd">param mu1</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param mu2</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param sigma1</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param sigma2</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param amp1</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param amp2</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>mus, sigmas, amps</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gaussian_fit_termodal">
+<span class="sig-name descname"><span class="pre">gaussian_fit_termodal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">240</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gaussian_fit_termodal" title="Ссылка на это определение">#</a></dt>
+<dd><p>Аппроксимация заданных точек термодальной нормальной функцией</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+<dt class="field-even">param y</dt>
+<dd class="field-even"><p>list (n,)</p>
+</dd>
+<dt class="field-odd">param mu1</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param mu2</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param mu3</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param sigma1</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param sigma2</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param sigma3</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param amp1</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">param amp2</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param amp3</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>mus, sigmas, amps</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="lin_regr_approx">
+<span class="sig-name descname"><span class="pre">lin_regr_approx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lin_regr_approx" title="Ссылка на это определение">#</a></dt>
+<dd><p>Аппроксимация распределения линейной функцией и создание графика по параметрам распределения</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+<dt class="field-even">param y</dt>
+<dd class="field-even"><p>list (n,)</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>(x_pred, y_pred), k, b, angle, score</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bimodal_gauss_approx">
+<span class="sig-name descname"><span class="pre">bimodal_gauss_approx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bimodal_gauss_approx" title="Ссылка на это определение">#</a></dt>
+<dd><p>Аппроксимация распределения бимодальным гауссом</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>list (n,)</p>
+</dd>
+<dt class="field-even">param y</dt>
+<dd class="field-even"><p>list (n,)</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>(x_gauss, y_gauss), mus, sigmas, amps</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
 </section>
 
 

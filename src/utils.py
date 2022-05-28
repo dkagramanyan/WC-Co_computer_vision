@@ -536,7 +536,7 @@ class grainMark():
     def get_mvee_params(cls, image, tol=0.2, debug=False):
         """
         :param image: ndarray (width, height,1), only preprocessed image
-        :param tol: int, koef of ellipse compactness
+        :param tol: foat, koef of ellipse compactness
         :return: ndarray a_beams, b_beams, angles, centroids
         """
         #
@@ -614,6 +614,12 @@ class grainShow():
 
     @classmethod
     def img_show(cls, image, N=20, cmap=plt.cm.nipy_spectral):
+        """
+        :param image:  ndarray (height,width,channels)
+        :param N: int
+        :param cmap: plt cmap
+        :return: None
+        """
         #
         # выводит изображение image
         #
@@ -625,8 +631,15 @@ class grainShow():
 
     @classmethod
     def enclosing_ellipse_show(cls, image, pos=0, tolerance=0.2, N=15):
+        """
+        :param image: ndarray (height,width,channels)
+        :param pos: int
+        :param tolerance: foat, koef of ellipse compactness
+        :param N: int
+        :return: None
+        """
         #
-        # рисует график точек многоугольника и описанного эллипса
+        # Выводит точки многоугольника с позиции pos и описанного вокруг него эллипса
         #
         a_beams, b_beams, angles, cetroids = grainMark.get_mvee_params(image, tolerance)
         approx = grainMark.get_row_contours(image)
@@ -658,8 +671,15 @@ class grainShow():
 class grainDraw():
     @classmethod
     def draw_corners(cls, image, corners, color=255):
+        """
+        :param image: ndarray (width, height, channels)
+        :param corners: list (n_corners,2)
+        :param color:  int
+        :return: ndarray (width, height, channels)
+        """
         #
         # НЕТ ГАРАНТИИ РАБОТЫ
+        # Наносит на изображение точки в местах, где есть углы списка corners
         #
         image = copy.copy(image)
         for i in corners:
@@ -670,6 +690,12 @@ class grainDraw():
 
     @classmethod
     def draw_edges(cls, image, cnts, color=(50, 50, 50)):
+        """
+        :param image: ndarray (width, height, channels)
+        :param cnts: ndarray (n_cnts,n,2)
+        :param color: tuple (3,)
+        :return: ndarray (width, height, channels)
+        """
         #
         # рисует на изображении линии по точкам контура cnts
         # линии в стиле x^1->x^2,x^2->x^3 и тд
@@ -702,10 +728,17 @@ class grainDraw():
 
     @classmethod
     def draw_tree(cls, img, centres=False, leafs=False, nodes=False, bones=False):
+        """
+        :param img: ndarray (width, height)
+        :param centres: Bool
+        :param leafs: Bool
+        :param nodes: Bool
+        :param bones: Bool
+        :return: ndarray (width, height, channels)
+        """
         #
-        # на вход подается биноризованное изображение
-        # рисует на инвертированном изображении
-        # скелет и точки центров, листьев, узлов и пикселей скелета
+        # на вход подается бинаризованное изображение
+        # рисует на инвертированном изображении скелет: точки их центров, листьев, узлов и пикселей скелета
         #
 
         image = img.copy() / 255
@@ -747,9 +780,14 @@ class grainDraw():
 class grainStats():
     @classmethod
     def kernel_points(cls, image, point, step=1):
+        """
+        :param image: ndarray (width, height)
+        :param point: tuple (2,)
+        :param step: int
+        :return: tuple (n_points,2)
+        """
         #
-        # возвращает координаты пикселей матрицы,
-        # центр которой это point
+        # возвращает координаты пикселей квадратной матрицы шириной 2*step, центр которой это point
         #
         x, y = point
         coords = []
@@ -761,6 +799,11 @@ class grainStats():
 
     @classmethod
     def stats_preprocess(cls, array, step):
+        """
+        :param array: list, ndarray (n,)
+        :param step: int
+        :return: array_copy, array_copy_set, dens_curve
+        """
         #
         # приведение углов к кратости, например 0,step,2*step и тд
         #
@@ -784,6 +827,13 @@ class grainStats():
 
     @classmethod
     def gaussian(cls, x, mu, sigma, amp=1):
+        """
+        :param x: list (n,)
+        :param mu: float
+        :param sigma: float
+        :param amp: float
+        :return: list (n,)
+        """
         #
         # возвращает нормальную фунцию по заданным параметрам
         #
@@ -791,6 +841,16 @@ class grainStats():
 
     @classmethod
     def gaussian_bimodal(cls, x, mu1, mu2, sigma1, sigma2, amp1=1, amp2=1):
+        """
+        :param x: list (n,)
+        :param mu1: float
+        :param mu2: float
+        :param sigma1: float
+        :param sigma2: float
+        :param amp1: float
+        :param amp2: float
+        :return: list (n,)
+        """
         #
         # возвращает бимодальную нормальную фунцию по заданным параметрам
         #
@@ -798,6 +858,19 @@ class grainStats():
 
     @classmethod
     def gaussian_termodal(cls, x, mu1, mu2, mu3, sigma1, sigma2, sigma3, amp1=1, amp2=1, amp3=1):
+        """
+        :param x: list (n,)
+        :param mu1: float
+        :param mu2: float
+        :param mu3: float
+        :param sigma1: float
+        :param sigma2: float
+        :param sigma3: float
+        :param amp1: float
+        :param amp2: float
+        :param amp3: float
+        :return: list (n,)
+        """
         #
         # возвращает термодальную нормальную фунцию по заданным параметрам
         #
@@ -806,6 +879,15 @@ class grainStats():
 
     @classmethod
     def ellipse(cls, a, b, angle, xc=0, yc=0, num=50):
+        """
+        :param a: float
+        :param b: float
+        :param angle: float, rad
+        :param xc: float, center coord x
+        :param yc: float, center coord y
+        :param num: int, number of ellipse points
+        :return: tuple (num, 2)
+        """
         #
         #  возвращает координаты эллипса, построенного по заданным параметрам
         #  по умолчанию центр (0,0)
@@ -820,6 +902,14 @@ class grainApprox():
 
     @classmethod
     def gaussian_fit(cls, x, y, mu=1, sigma=1, amp=1):
+        """
+        :param x: list (n,)
+        :param y: list (n,)
+        :param mu: float
+        :param sigma: float
+        :param amp: float
+        :return: mus, sigmas, amps
+        """
         #
         # аппроксимация заданных точек нормальной функцией
         #
@@ -834,6 +924,17 @@ class grainApprox():
 
     @classmethod
     def gaussian_fit_bimodal(cls, x, y, mu1=100, mu2=240, sigma1=30, sigma2=30, amp1=1, amp2=1):
+        """
+        :param x: list (n,)
+        :param y: list (n,)
+        :param mu1: float
+        :param mu2: float
+        :param sigma1: float
+        :param sigma2: float
+        :param amp1: float
+        :param amp2: float
+        :return: mus, sigmas, amps
+        """
         #
         # аппроксимация заданных точек бимодальной нормальной функцией
         #
@@ -849,6 +950,20 @@ class grainApprox():
     @classmethod
     def gaussian_fit_termodal(cls, x, y, mu1=10, mu2=100, mu3=240, sigma1=10, sigma2=30, sigma3=30, amp1=1, amp2=1,
                               amp3=1):
+        """
+        :param x: list (n,)
+        :param y: list (n,)
+        :param mu1: float
+        :param mu2: float
+        :param mu3: float
+        :param sigma1: float
+        :param sigma2: float
+        :param sigma3: float
+        :param amp1: float
+        :param amp2: float
+        :param amp3: float
+        :return: mus, sigmas, amps
+        """
         #
         # аппроксимация заданных точек термодальной нормальной функцией
         #
@@ -864,9 +979,13 @@ class grainApprox():
 
     @classmethod
     def lin_regr_approx(cls, x, y):
+        """
+        :param x: list (n,)
+        :param y: list (n,)
+        :return: (x_pred, y_pred), k, b, angle, score
+        """
         #
-        # аппроксимация распределения линейной функцией
-        # и создание графика по параметрам распределения
+        # аппроксимация распределения линейной функцией и создание графика по параметрам распределения
         #
 
         x_pred = np.linspace(x.min(axis=0), x.max(axis=0), 50)
@@ -884,6 +1003,11 @@ class grainApprox():
 
     @classmethod
     def bimodal_gauss_approx(cls, x, y):
+        """
+        :param x: list (n,)
+        :param y: list (n,)
+        :return: (x_gauss, y_gauss), mus, sigmas, amps
+        """
         #
         # аппроксимация распределения бимодальным гауссом
         #
@@ -898,7 +1022,18 @@ class grainApprox():
 
 class grainGenerate():
     @classmethod
-    def angles_legend(cls, images_amount, name, itype, step, mus, sigmas, amps, norm, ):
+    def angles_legend(cls, images_amount, name, itype, step, mus, sigmas, amps, norm):
+        """
+        :param images_amount: int
+        :param name: str
+        :param itype: str
+        :param step: int
+        :param mus: float
+        :param sigmas: float
+        :param amps: float
+        :param norm: int
+        :return: str
+        """
         #
         # создание легенды распределения углов
         #
@@ -934,10 +1069,9 @@ class grainGenerate():
         :param types: list str [class_type1,class_type2,..]
         :param step: scalar int [0,N]
         :param save: bool
-        :return: ndarray uint8 (n_classes,n_samples, height, width)
         """
         #
-        # вывод распределения углов для всех фотографий одного образца
+        # вычисление и сохранение распределения углов для всех фотографий одного образца
         #
 
         texts = []
@@ -1000,6 +1134,18 @@ class grainGenerate():
 
     @classmethod
     def beams_legend(cls, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
+        """
+        :param name: str
+        :param itype: str
+        :param norm: int
+        :param k: float
+        :param angle: float
+        :param b: float
+        :param score: float
+        :param dist_step: int
+        :param dist_mean: float
+        :return: str
+        """
         #
         # создание легенды для распределения длин полуосей
         #
@@ -1017,8 +1163,21 @@ class grainGenerate():
 
     @classmethod
     def diametr_approx_save(cls, folder, images, names, types, step, pixel, start=2, end=-3, save=True, debug=False):
+        """
+        :param folder: str
+        :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
+        :param names: list str [class_name1,class_name2,..]
+        :param types: list str [class_type1,class_type2,..]
+        :param step: scalar int [0,N]
+        :param pixel: float
+        :param start: int
+        :param end: int
+        :param save: bool
+        :param debug: bool
+        :return: None
+        """
         #
-        # вывод распределения длин а- и б- полуосей для разных образцов
+        # вычисление и сохранение распределения длин а- и б- полуосей и угла поворота эллипса для разных образцов
         #
         texts = []
         xy_scatter = []
