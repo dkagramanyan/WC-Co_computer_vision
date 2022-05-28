@@ -10,3 +10,7 @@
 .. image:: https://pobedit.s3.us-east-2.amazonaws.com/docs_images/pipeline.jpg
     :align:   center
 
+
+`Веса AE (tf) <https://pobedit.s3.us-east-2.amazonaws.com/ml_weights/u2net_2021-11-19.h5>`_
+
+`Веса VQ-VAE-2 (pt) <https://pobedit.s3.us-east-2.amazonaws.com/ml_weights/vqvae_002_train_0.00976_test_0.00967_1024.pt>`_
