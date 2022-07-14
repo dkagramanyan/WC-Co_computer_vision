@@ -209,7 +209,7 @@ class grainPreprocess():
 
         if save:
             np.save(save_name, preproc_images)
-        return preproc_images
+        return np.array(preproc_images)
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
@@ -242,7 +242,7 @@ class grainPreprocess():
                     io.imsave(new_folder_path + '/' + folder + '/' + name[start_name:stop_name] + '.jpg', img)
 
     @classmethod
-    def get_example_images(cls):
+    def get_example_images(cls, crop=True, preprocess=False):
         '''
         :return: ndarray [[img1],[img2]..]
         '''
@@ -250,11 +250,19 @@ class grainPreprocess():
         # скачивает из контейнера s3 по 1 снимку каждого образца
         #
 
-        urls = CfgDataset.images_urls
         images = []
 
+        if crop:
+            if preprocess:
+                urls = CfgDataset.images_crop_preproc_urls
+            else:
+                urls = CfgDataset.images_crop_urls
+        else:
+            urls = CfgDataset.images_urls
+
         for url in urls:
-            logger.warning(f'downloading {url}')
+            # logger.warning(f'downloading {url}')
+            print(f'downloading {url}')
             file = requests.get(url, stream=True).raw
             img = np.asarray(Image.open(file))
             images.append(img)
@@ -530,7 +538,7 @@ class grainMark():
                                 angles.append(0)
                                 angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
 
-        return np.array(angles), angles_pos
+        return np.array(angles)
 
     @classmethod
     def get_mvee_params(cls, image, tol=0.2, debug=False):
@@ -1061,7 +1069,7 @@ class grainGenerate():
         return legend
 
     @classmethod
-    def angles_approx_save(cls, folder, images, names, types, step, save=True):
+    def angles_approx_save(cls, folder, images, name, names, types, step, save=True):
         """
         :param folder: str path to dir
         :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
@@ -1127,10 +1135,11 @@ class grainGenerate():
             texts.append(text)
 
         if save:
-            np.save(f'{folder}/' + CfgAnglesNames.values + f'{step}.npy', np.array(xy_scatter, dtype=object))
-            np.save(f'{folder}/' + CfgAnglesNames.approx + f'{step}.npy', np.array(xy_gauss))
-            np.save(f'{folder}/' + CfgAnglesNames.approx_data + f'{step}.npy', np.array(xy_gauss_data))
-            np.save(f'{folder}/' + CfgAnglesNames.legend + f'{step}.npy', np.array(texts))
+            np.save(f'{folder}/' + CfgAnglesNames.values + f'{name}' + f'{step}.npy',
+                    np.array(xy_scatter, dtype=object))
+            np.save(f'{folder}/' + CfgAnglesNames.approx + f'{name}' + f'{step}.npy', np.array(xy_gauss))
+            np.save(f'{folder}/' + CfgAnglesNames.approx_data + f'{name}' + f'{step}.npy', np.array(xy_gauss_data))
+            np.save(f'{folder}/' + CfgAnglesNames.legend + f'{name}' + f'{step}.npy', np.array(texts))
 
     @classmethod
     def beams_legend(cls, name, itype, norm, k, angle, b, score, dist_step, dist_mean):

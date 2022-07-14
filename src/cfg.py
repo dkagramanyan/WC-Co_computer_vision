@@ -24,6 +24,18 @@ class CfgDataset():
                    'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co15.jpg',
                    'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co25.jpg']
 
+    images_crop_urls = ['https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co8-crop.jpg',
+                        'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co11-crop.jpg',
+                        'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co6_2-crop.jpg',
+                        'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co15-crop.jpg',
+                        'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co25-crop.jpg']
+
+    images_crop_preproc_urls = ['https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co8-crop-preproc.jpg',
+                                'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co11-crop-preproc.jpg',
+                                'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co6_2-crop-preproc.jpg',
+                                'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co15-crop-preproc.jpg',
+                                'https://pobedit.s3.us-east-2.amazonaws.com/default_images/Ultra_Co25-crop-preproc.jpg']
+
     images_names = np.array(
         [['Ultra_Co8.jpg'], ['Ultra_Co11.jpg'], ['Ultra_Co6_2.jpg'], ['Ultra_Co15.jpg'], ['Ultra_Co25.jpg']])
 
