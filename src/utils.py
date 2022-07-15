@@ -482,7 +482,7 @@ class grainMark():
         return new_contours
 
     @classmethod
-    def get_angles(cls, image, thr=5):
+    def get_angles(cls, image, border_eps=5, tol=3):
         """
         :param image: ndarray (width, height,1), only preprocessed image
         :param thr: int, distance from original image edge to inner image edge (rect in rect)
@@ -492,19 +492,23 @@ class grainMark():
         # Возвращает углы с направлением обхода контура против часовой стрелки, углы >180 градусов учитываются.
         # На вход принимает только обработанное изображение
         #
-        approx = cls.get_contours(image, tol=4)
 
-        angles = []
+        cnts = cls.get_row_contours(image)
+        angles=[]
 
-        for k, cnt in enumerate(approx):
-            if len(cnt) > 2:
-                for i, point in enumerate(cnt[:-1]):
-                    y1, x1 = cnt[i - 1]
-                    y2, x2 = cnt[i]
-                    y3, x3 = cnt[i + 1]
-                    # убирает контуры у границ
+        for j, cnt in enumerate(cnts):
+            rules = [image.shape[0] - cnt[:, 0].max() > border_eps, cnt[:, 0].min() > border_eps,
+                     image.shape[1] - cnt[:, 1].max() > border_eps, cnt[:, 1].min() > border_eps]
+            # проверяем находится ли контур у границы, но это срабатывает очень редко
+            if all(rules):
+                cnt_aprox = approximate_polygon(cnt, tolerance=tol)
+                # основная проверка на неправильные контуры
+                if len(cnt_aprox)>3:
+                    for i, point in enumerate(cnt_aprox[:-1]):
 
-                    if abs(x2 - image.shape[0] - 1) > thr and abs(y2 - image.shape[1] - 1) > thr and x2 > thr and y2 > thr:
+                        y1, x1 = cnt_aprox[i - 1]
+                        y2, x2 = cnt_aprox[i]
+                        y3, x3 = cnt_aprox[i + 1]
 
                         v1 = np.array((x1 - x2, y1 - y2)).reshape(1, 2)
                         v2 = np.array((x3 - x2, y3 - y2)).reshape(1, 2)
@@ -524,12 +528,12 @@ class grainMark():
                                 angles.append(ang)
                             else:
                                 angles.append(360-ang)
-
                         else:
                             if det < 0:
                                 angles.append(360)
                             else:
                                 angles.append(0)
+
 
         return np.array(angles)
 
