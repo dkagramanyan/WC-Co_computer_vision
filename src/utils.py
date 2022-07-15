@@ -486,7 +486,7 @@ class grainMark():
         """
         :param image: ndarray (width, height,1), only preprocessed image
         :param thr: int, distance from original image edge to inner image edge (rect in rect)
-        :return: angles ndarray (n), angles coords list (n_angles, 2)
+        :return: angles ndarray shape (n)
         """
         #
         # Возвращает углы с направлением обхода контура против часовой стрелки, углы >180 градусов учитываются.
@@ -494,23 +494,18 @@ class grainMark():
         #
         approx = cls.get_contours(image, tol=4)
 
-        # вычисление угла
         angles = []
-        angles_pos = []
+
         for k, cnt in enumerate(approx):
             if len(cnt) > 2:
                 for i, point in enumerate(cnt[:-1]):
-                    point1 = cnt[i - 1]
-                    point2 = cnt[i]
-                    point3 = cnt[i + 1]
-                    x1, y1 = point1[1], point1[0]
-                    x2, y2 = point2[1], point2[0]
-                    x3, y3 = point3[1], point3[0]
+                    y1, x1 = cnt[i - 1]
+                    y2, x2 = cnt[i]
+                    y3, x3 = cnt[i + 1]
                     # убирает контуры у границ
 
-                    if abs(x2 - image.shape[0] - 1) > thr and \
-                            abs(y2 - image.shape[1] - 1) > thr and \
-                            x2 > thr and y2 > thr:
+                    if abs(x2 - image.shape[0] - 1) > thr and abs(y2 - image.shape[1] - 1) > thr and x2 > thr and y2 > thr:
+
                         v1 = np.array((x1 - x2, y1 - y2)).reshape(1, 2)
                         v2 = np.array((x3 - x2, y3 - y2)).reshape(1, 2)
 
@@ -524,19 +519,17 @@ class grainMark():
 
                         if abs(cos) < 1:
                             ang = int(np.arccos(cos) * 180 / np.pi)
+
                             if det < 0:
                                 angles.append(ang)
-                                angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
                             else:
-                                angles.append(360 - ang)
-                                angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
+                                angles.append(360-ang)
+
                         else:
                             if det < 0:
                                 angles.append(360)
-                                angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
                             else:
                                 angles.append(0)
-                                angles_pos.append([(x1, y1), (x2, y2), (x3, y3)])
 
         return np.array(angles)
 
