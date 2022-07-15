@@ -1097,7 +1097,7 @@ class grainGenerate():
             all_original_angles = []
 
             for j, image in enumerate(images_list):
-                original_angles, _ = grainMark.get_angles(image)
+                original_angles = grainMark.get_angles(image)
                 end_time = time.time()
                 progress_bar_step += 1
                 eta = round((end_time - start_time) * (l - 1 - progress_bar_step), 1)
