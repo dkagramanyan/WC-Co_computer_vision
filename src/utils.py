@@ -188,6 +188,7 @@ class grainPreprocess():
                 step += 1
                 image = io.imread(image_path).astype(np.uint8)
                 # вырезает нижнюю полоску фотографии с линекой и тд
+                # !!!!!! убрать !!!!!
                 if crop_bottom:
                     image = grainPreprocess.combine(image, h)
 
@@ -208,8 +209,10 @@ class grainPreprocess():
                 preproc_images[i].append(image)
 
         if save:
-            np.save(save_name, preproc_images)
-        return np.array(preproc_images)
+            np.save('images_' + save_name + '.npy', preproc_images)
+            np.save('metadata_' + save_name + '.npy', folders_names)
+
+        return np.arra(preproc_images), folders_names
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
@@ -494,7 +497,7 @@ class grainMark():
         #
 
         cnts = cls.get_row_contours(image)
-        angles=[]
+        angles = []
 
         for j, cnt in enumerate(cnts):
             rules = [image.shape[0] - cnt[:, 0].max() > border_eps, cnt[:, 0].min() > border_eps,
@@ -503,7 +506,7 @@ class grainMark():
             if all(rules):
                 cnt_aprox = approximate_polygon(cnt, tolerance=tol)
                 # основная проверка на неправильные контуры
-                if len(cnt_aprox)>3:
+                if len(cnt_aprox) > 3:
                     for i, point in enumerate(cnt_aprox[:-1]):
 
                         y1, x1 = cnt_aprox[i - 1]
@@ -527,13 +530,12 @@ class grainMark():
                             if det < 0:
                                 angles.append(ang)
                             else:
-                                angles.append(360-ang)
+                                angles.append(360 - ang)
                         else:
                             if det < 0:
                                 angles.append(360)
                             else:
                                 angles.append(0)
-
 
         return np.array(angles)
 
@@ -1066,7 +1068,7 @@ class grainGenerate():
         return legend
 
     @classmethod
-    def angles_approx_save(cls, folder, images, name, names, types, step, save=True):
+    def angles_approx_save(cls, folder, images, name, names, types_dict, step, save=True):
         """
         :param folder: str path to dir
         :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
@@ -1120,7 +1122,8 @@ class grainGenerate():
 
             (x_gauss, y_gauss), mus, sigmas, amps = grainApprox.bimodal_gauss_approx(x, y)
 
-            text = grainGenerate.angles_legend(len(images_list), names[i], types[i], step, mus, sigmas, amps, norm)
+            text = grainGenerate.angles_legend(len(images_list), names[i], types_dict[names[i]], step, mus, sigmas,
+                                               amps, norm)
 
             xy_gauss.append((x_gauss, y_gauss))
             xy_scatter.append((x, y))
@@ -1168,7 +1171,8 @@ class grainGenerate():
         return legend
 
     @classmethod
-    def diametr_approx_save(cls, folder, images, names, types, step, pixel, start=2, end=-3, save=True, debug=False):
+    def diametr_approx_save(cls, folder, images, names, types_dict, step, pixel, start=2, end=-3, save=True,
+                            debug=False):
         """
         :param folder: str
         :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
@@ -1242,9 +1246,9 @@ class grainGenerate():
 
             dist_step = pixel * step
 
-            legend1 = cls.beams_legend(names[i], types[i], norm1, k1, angle1, b1, score1, dist_step,
+            legend1 = cls.beams_legend(names[i], types_dict[names[i]], norm1, k1, angle1, b1, score1, dist_step,
                                        distances1.mean() * pixel)
-            legend2 = cls.beams_legend(names[i], types[i], norm2, k2, angle2, b2, score2, dist_step,
+            legend2 = cls.beams_legend(names[i], types_dict[names[i]], norm2, k2, angle2, b2, score2, dist_step,
                                        distances2.mean() * pixel)
 
             texts.append([legend1, legend2])
