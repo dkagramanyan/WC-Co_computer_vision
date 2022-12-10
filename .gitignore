@@ -20,10 +20,10 @@
 /docs/_sources/*
 /docs/.doctrees/*
 
-/ml/*.png
-/ml/*.npy
 /ml/data/*
-/ml/*.h5
+/cv/data/*
+/documents/*
+/datasets/*
 
 /tests/__pycache__/*
 
