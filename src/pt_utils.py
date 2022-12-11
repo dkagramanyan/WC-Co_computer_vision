@@ -11,6 +11,12 @@ from torch import nn
 #
 # from torchvision import datasets, transforms, utils
 
+import os
+import numpy as np
+
+from tqdm import trange, tqdm
+from PIL import Image
+from matplotlib import pyplot as plt
 
 LOCAL_PROCESS_GROUP = None
 
@@ -318,7 +324,7 @@ class VQVAE(nn.Module):
             n_res_block,
             n_res_channel,
             stride=4,
-            )
+        )
 
     def forward(self, input):
         quant_t, quant_b, diff, _, _ = self.encode(input)
@@ -362,3 +368,79 @@ class VQVAE(nn.Module):
         dec = self.decode(quant_t, quant_b)
 
         return dec
+
+
+class Embeddings():
+
+    @classmethod
+    def get_vqvae2_embs(cls, vqvae2_model, dataset, device='cuda'):
+        images_embs_t = []
+        images_embs_b = []
+
+        # vqvae2_model=model
+
+        dataset_path = dataset.__dict__['root']
+        classes_folders = os.listdir(dataset_path)
+        classes_folders_images = [os.listdir(dataset_path + '/' + folder) for folder in classes_folders]
+        classes_folders_images_num = [len(os.listdir(dataset_path + '/' + folder)) for folder in classes_folders]
+
+        img_transform = dataset.__dict__['transform']
+
+        for i in range(len(classes_folders)):
+            print(f'Number of folders {i + 1}/{len(classes_folders)}')
+            for j in tqdm(range(classes_folders_images_num[i]), desc=f'Folder {classes_folders[i]}'):
+                image_path = dataset_path + '/' + classes_folders[i] + '/' + classes_folders_images[i][j]
+
+                image = Image.open(image_path)
+                image = image.convert("RGB")
+                image = img_transform(image)
+                image = image.unsqueeze(0).to(device)
+
+                vqvae2_model.zero_grad()
+
+                quant_t, quant_b, diff, _, indx_b = vqvae2_model.encode(image)
+
+                # меняем местами размерность опорных векторов из codedict с размерностью фильтров свертки
+                # нужно для получения средних значений, которые не работают
+                # swapped_b=np.swapaxes(quant_b.cpu().detach().numpy()[0],0,-1)
+                # swapped_t=np.swapaxes(quant_t.cpu().detach().numpy()[0],0,-1)
+
+                swapped_t = quant_t.cpu().detach().numpy().flatten()
+                swapped_b = quant_b.cpu().detach().numpy().flatten()
+
+                images_embs_t.append(swapped_t)
+                images_embs_b.append(swapped_b)
+
+        return np.array(images_embs_t), np.array(images_embs_b)
+
+    @classmethod
+    def plot_2d_scatter_embs(cls, embs_scatter, legend, r_shape=(5, 360, 2), dot_size=20, fontsize=15, save=False,
+                             name=None, N=15, M=15):
+        """
+        :param name:
+        :param r_shape:
+        :param embs_scatter:  ndarray shape(N_classes,N_images,2)
+        :param legend:
+        :param dot_size:
+        :param fontsize:
+        :param save:
+        :param N:
+        :param M:
+        :return:
+        """
+
+        fig, ax = plt.subplots(figsize=(N, M))
+
+        colors = ['b', 'g', 'y', 'm', 'c']
+        markers = ['8', 'v', 's', 'd', '*', ]
+
+        scatter_xy = embs_scatter.reshape(r_shape)
+
+        for i in range(len(scatter_xy)):
+            ax.scatter(scatter_xy[i, :, 0], scatter_xy[i, :, 1], color=colors[i], s=dot_size,
+                       marker=markers[i])
+
+        ax.legend(legend, fontsize=fontsize)
+        if save and name:
+            plt.savefig(f'{name}.png')
+        plt.show()
