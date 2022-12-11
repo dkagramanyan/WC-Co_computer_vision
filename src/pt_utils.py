@@ -18,6 +18,8 @@ from tqdm import trange, tqdm
 from PIL import Image
 from matplotlib import pyplot as plt
 
+from torchvision import datasets, transforms, utils
+
 LOCAL_PROCESS_GROUP = None
 
 
@@ -290,6 +292,91 @@ class Decoder(nn.Module):
 
     def forward(self, input):
         return self.blocks(input)
+
+
+class Trainer():
+
+    @classmethod
+    def train(cls, model, optimizer, train_loader, test_loader, model_path, epochs=100, device='cuda',
+              latent_loss_weight=0.25, sample_size=25):
+
+        if os.path.exists(model_path) is False:
+            os.mkdir(model_path)
+
+        for epoch in range(epochs):
+
+            if is_primary():
+                train_loader = tqdm(train_loader)
+
+            criterion = nn.MSELoss()
+
+            mse_sum = 0
+            mse_n = 0
+            test_mean_loss = []
+            train_mean_loss = []
+
+            for i, (img, label) in enumerate(train_loader):
+                model.zero_grad()
+
+                img = img.to(device)
+
+                out, latent_loss = model(img)
+                recon_loss = criterion(out, img)
+                latent_loss = latent_loss.mean()
+                loss = recon_loss + latent_loss_weight * latent_loss
+                loss.backward()
+                train_mean_loss.append(loss.item())
+                # if scheduler is not None:
+                #     scheduler.step()
+                optimizer.step()
+
+                part_mse_sum = recon_loss.item() * img.shape[0]
+                part_mse_n = img.shape[0]
+                comm = {"mse_sum": part_mse_sum, "mse_n": part_mse_n}
+                comm = all_gather(comm)
+
+                for part in comm:
+                    mse_sum += part["mse_sum"]
+                    mse_n += part["mse_n"]
+
+                if is_primary():
+                    lr = optimizer.param_groups[0]["lr"]
+
+                    train_loader.set_description(
+                        (
+                            f"epoch: {epoch + 1}; loss: {str(round(np.mean(train_mean_loss), 5))}; mse: {recon_loss.item():.5f}; "
+                            f"latent: {latent_loss.item():.3f}; avg mse: {mse_sum / mse_n:.5f}; "
+                            f"lr: {lr:.5f}"
+                        )
+                    )
+
+                model.train()
+
+            model.eval()
+
+            with torch.no_grad():
+
+                for j, (img, label) in enumerate(test_loader):
+                    img = img.to(device)
+                    out, latent_loss = model(img)
+                    test_recon_loss = criterion(out, img)
+                    test_latent_loss = latent_loss.mean()
+                    test_loss = test_recon_loss + latent_loss_weight * latent_loss
+                    test_mean_loss.append(round(test_loss.item(), 5))
+
+                sample = img[:sample_size]
+
+            utils.save_image(
+                torch.cat([sample, out], 0),
+                f"{model_path}/{str(epoch + 1).zfill(5)}.png",
+                nrow=sample_size,
+                normalize=True,
+                range=(-1, 1),
+            )
+
+            print(f'test elbo: {str(round(np.mean(test_mean_loss), 5))}')
+            torch.save(model.state_dict(),
+                       f"{model_path}/vqvae_{str(epoch + 1).zfill(3)}_train_{str(round(np.mean(train_mean_loss), 5))}_test_{str(round(np.mean(test_mean_loss), 5))}.pt")
 
 
 class VQVAE(nn.Module):
