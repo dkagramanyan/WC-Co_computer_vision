@@ -696,7 +696,7 @@ class grainDraw():
         return image
 
     @classmethod
-    def draw_edges(cls, image, cnts, color=(50, 50, 50)):
+    def draw_edges(cls, image, cnts, color=(50, 50, 50), r=4,e_width=5,l_width=4):
         """
         :param image: ndarray (width, height, channels)
         :param cnts: ndarray (n_cnts,n,2)
@@ -715,15 +715,14 @@ class grainDraw():
             if len(cnt) > 1:
                 point = cnt[0]
                 x1, y1 = point[1], point[0]
-                r = 4
 
                 for i, point2 in enumerate(cnt):
                     p2 = point2
 
                     x2, y2 = p2[1], p2[0]
 
-                    draw.ellipse((y2 - r, x2 - r, y2 + r, x2 + r), fill=color, width=5)
-                    draw.line((y1, x1, y2, x2), fill=(100, 100, 100), width=4)
+                    draw.ellipse((y2 - r, x2 - r, y2 + r, x2 + r), fill=color, width=e_width)
+                    draw.line((y1, x1, y2, x2), fill=(100, 100, 100), width=l_width)
                     x1, y1 = x2, y2
 
             else:
