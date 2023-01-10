@@ -32,6 +32,7 @@ from scipy import ndimage
 
 import copy
 import cv2
+from tqdm import tqdm
 
 from scipy.spatial import ConvexHull
 
@@ -153,10 +154,12 @@ class grainPreprocess():
         return bin_grad.astype(np.uint8)
 
     @classmethod
-    def read_preprocess_data(cls, images_dir, max_images_num_per_class=100, preprocess=False, save=False,
+    def read_preprocess_data(cls, images_dir, max_images_num_per_class=100, save=False,
                              crop_bottom=False,
                              h=135, resize=True, resize_shape=None,
-                             save_name='all_images.npy'):
+                             preprocess_transform=None,
+                             save_name='all_images.npy'
+                             ):
         """
         :param images_dir: str
         :param max_images_num_per_class: int
@@ -173,19 +176,16 @@ class grainPreprocess():
         folders_names = glob.glob(images_dir + '*')
         images_paths = [glob.glob(folder_name + '/*')[:max_images_num_per_class] for folder_name in folders_names]
 
-        l = np.array(images_paths).flatten().shape[0]
-
-        # Initial call to print 0% progress
-        GrainLogs.printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=50)
-
         preproc_images = []
 
-        start_time = time.time()
-        step = 0
+        if preprocess_transform is None:
+            preprocess_transform = [cls.image_preprocess]
+        elif preprocess_transform is False:
+            preprocess_transform = None
+
         for i, images_list_paths in enumerate(images_paths):
             preproc_images.append([])
-            for image_path in images_list_paths:
-                step += 1
+            for image_path in tqdm(images_list_paths):
                 image = io.imread(image_path).astype(np.uint8)
                 # вырезает нижнюю полоску фотографии с линекой и тд
                 # !!!!!! убрать !!!!!
@@ -200,19 +200,17 @@ class grainPreprocess():
                         print('No resize shape')
 
                 # последовательно применяет фильтры (медианный, отсу, собель и тд)
-                if preprocess:
-                    image = grainPreprocess.image_preprocess(image)
-                end_time = time.time()
-                eta = round((end_time - start_time) * (l - step), 1)
-                GrainLogs.printProgressBar(step, l, eta=eta, prefix='Progress:', suffix='Complete', length=50)
-                start_time = time.time()
+                if preprocess_transform is not None:
+                    for transf in preprocess_transform:
+                        image = transf(image)
+
                 preproc_images[i].append(image)
 
         if save:
             np.save('images_' + save_name + '.npy', preproc_images)
             np.save('metadata_' + save_name + '.npy', folders_names)
 
-        return np.arra(preproc_images), folders_names
+        return np.array(preproc_images), folders_names
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
@@ -696,7 +694,7 @@ class grainDraw():
         return image
 
     @classmethod
-    def draw_edges(cls, image, cnts, color=(50, 50, 50), r=4,e_width=5,l_width=4):
+    def draw_edges(cls, image, cnts, color=(50, 50, 50), r=4, e_width=5, l_width=4):
         """
         :param image: ndarray (width, height, channels)
         :param cnts: ndarray (n_cnts,n,2)
@@ -1088,25 +1086,11 @@ class grainGenerate():
         if not os.path.exists(folder):
             os.mkdir(folder)
 
-        start_time = 0
-        progress_bar_step = 0
-
-        l = images.shape[0] * images.shape[1]
-        GrainLogs.printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=30)
-
-        for i, images_list in enumerate(images):
+        for i, images_list in tqdm(enumerate(images)):
             all_original_angles = []
 
             for j, image in enumerate(images_list):
                 original_angles = grainMark.get_angles(image)
-                end_time = time.time()
-                progress_bar_step += 1
-                eta = round((end_time - start_time) * (l - 1 - progress_bar_step), 1)
-                # print('eta: ', eta)
-                # вывод времени не работает, пофиксить потом
-                GrainLogs.printProgressBar(progress_bar_step, l, prefix='Progress:', suffix='Complete',
-                                           length=30)
-                start_time = time.time()
 
                 for angle in original_angles:
                     all_original_angles.append(angle)
@@ -1170,7 +1154,7 @@ class grainGenerate():
         return legend
 
     @classmethod
-    def diametr_approx_save(cls, folder, images, names, types_dict, step, pixel, start=2, end=-3, save=True,
+    def diametr_approx_save(cls, folder, images, name, names, types_dict, step, pixel, start=2, end=-3, save=True,
                             debug=False):
         """
         :param folder: str
@@ -1262,10 +1246,10 @@ class grainGenerate():
             ))
 
         if save:
-            np.save(f'{folder}/' + CfgBeamsNames.values + f'{step}.npy', np.array(xy_scatter, dtype=object))
-            np.save(f'{folder}/' + CfgBeamsNames.approx + f'{step}.npy', np.array(xy_linear))
-            np.save(f'{folder}/' + CfgBeamsNames.approx_data + f'{step}.npy', np.array(xy_linear_data))
-            np.save(f'{folder}/' + CfgBeamsNames.legend + f'{step}.npy', np.array(texts))
+            np.save(f'{folder}/' + CfgBeamsNames.values + f'{name}' + f'{step}.npy', np.array(xy_scatter, dtype=object))
+            np.save(f'{folder}/' + CfgBeamsNames.approx + f'{name}' + f'{step}.npy', np.array(xy_linear))
+            np.save(f'{folder}/' + CfgBeamsNames.approx_data + f'{name}' + f'{step}.npy', np.array(xy_linear_data))
+            np.save(f'{folder}/' + CfgBeamsNames.legend + f'{name}' + f'{step}.npy', np.array(texts))
 
 
 class GrainLogs():
