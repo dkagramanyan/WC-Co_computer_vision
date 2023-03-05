@@ -32,7 +32,7 @@ from scipy import ndimage
 
 import copy
 import cv2
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 from scipy.spatial import ConvexHull
 
@@ -43,6 +43,7 @@ import glob
 from logging import StreamHandler, Formatter
 
 from src.cfg import CfgAnglesNames, CfgBeamsNames, CfgDataset
+import json
 
 handler = StreamHandler(stream=sys.stdout)
 handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
@@ -154,11 +155,14 @@ class grainPreprocess():
         return bin_grad.astype(np.uint8)
 
     @classmethod
-    def read_preprocess_data(cls, images_dir, max_images_num_per_class=100, save=False,
+    def read_preprocess_data(cls,
+                             images_dir,
+                             max_images_num_per_class=100,
+                             save=False,
                              crop_bottom=False,
-                             h=135, resize=True, resize_shape=None,
+                             h=135, resize_shape=None,
                              preprocess_transform=None,
-                             save_name='all_images.npy'
+                             save_name='all_images'
                              ):
         """
         :param images_dir: str
@@ -177,40 +181,44 @@ class grainPreprocess():
         images_paths = [glob.glob(folder_name + '/*')[:max_images_num_per_class] for folder_name in folders_names]
 
         preproc_images = []
+        if len(images_paths) > 0:
+            if preprocess_transform is None:
+                preprocess_transform = [grainPreprocess.image_preprocess]
+            elif preprocess_transform is False:
+                preprocess_transform = None
 
-        if preprocess_transform is None:
-            preprocess_transform = [cls.image_preprocess]
-        elif preprocess_transform is False:
-            preprocess_transform = None
+            for i, images_list_paths in enumerate(images_paths):
+                preproc_images.append([])
+                for image_path in tqdm(images_list_paths):
+                    image = io.imread(image_path).astype(np.uint8)
+                    # вырезает нижнюю полоску фотографии с линекой и тд
+                    # !!!!!! убрать !!!!!
+                    if crop_bottom:
+                        image = grainPreprocess.combine(image, h)
 
-        for i, images_list_paths in enumerate(images_paths):
-            preproc_images.append([])
-            for image_path in tqdm(images_list_paths):
-                image = io.imread(image_path).astype(np.uint8)
-                # вырезает нижнюю полоску фотографии с линекой и тд
-                # !!!!!! убрать !!!!!
-                if crop_bottom:
-                    image = grainPreprocess.combine(image, h)
-
-                # ресайзит изображения
-                if resize:
+                    # ресайзит изображения
                     if resize_shape is not None:
-                        image = transform.resize(image, resize_shape)
-                    else:
-                        print('No resize shape')
+                        if resize_shape is not None:
+                            image = transform.resize(image, resize_shape)
+                        else:
+                            print('No resize shape')
 
-                # последовательно применяет фильтры (медианный, отсу, собель и тд)
-                if preprocess_transform is not None:
-                    for transf in preprocess_transform:
-                        image = transf(image)
+                    # последовательно применяет фильтры (медианный, отсу, собель и тд)
+                    if preprocess_transform is not None:
+                        for transf in preprocess_transform:
+                            image = transf(image)
 
-                preproc_images[i].append(image)
+                    preproc_images[i].append(image)
 
-        if save:
-            np.save('images_' + save_name + '.npy', preproc_images)
-            np.save('metadata_' + save_name + '.npy', folders_names)
+            if save:
+                np.save(f'{save_name}_images.npy', preproc_images)
+                names_dict = dict((f'Class_{i}', name.replace('\\', '/')) for i, name in enumerate(folders_names))
+                with open(f'{save_name}_metadata.json', 'w') as outfile:
+                    json.dump(names_dict, outfile)
 
-        return np.array(preproc_images), folders_names
+            return np.array(preproc_images), folders_names
+        else:
+            print('wrong images path')
 
     @classmethod
     def tiff2jpg(cls, folder_path, start_name=0, stop_name=-4, new_folder_path='resized'):
@@ -1176,34 +1184,28 @@ class grainGenerate():
         xy_scatter = []
         xy_linear = []
         xy_linear_data = []
-        l = images.shape[0] * images.shape[1]
-        GrainLogs.printProgressBar(0, l, prefix='Progress:', suffix='Complete', length=30)
+        all_a_beams = []
+        all_b_beams = []
 
-        progress_bar_step = 0
-        start_time = 0
         angles = None
 
         for i, images_list in enumerate(images):
 
-            all_a_beams = []
-            all_b_beams = []
+            class_a_beams = []
+            class_b_beams = []
 
-            for j, image in enumerate(images_list):
+            for j, image in enumerate(tqdm(images_list)):
                 a_beams, b_beams, angles, cetroids = grainMark.get_mvee_params(image, 0.2, debug=debug)
-                progress_bar_step += 1
-                end_time = time.time()
-                eta = round((end_time - start_time) * (l - 1 - progress_bar_step), 1)
-                # print('eta: ', eta)
-                # вывод времени не работает, пофиксить потом
-                GrainLogs.printProgressBar(progress_bar_step, l, prefix='Progress:', suffix='Complete',
-                                           length=30)
-                start_time = time.time()
-                for k in range(len(a_beams)):
-                    all_a_beams.append(a_beams[k])
-                    all_b_beams.append(b_beams[k])
 
-            distances1, dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
-            distances2, dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
+                for k in range(len(a_beams)):
+                    class_a_beams.append(a_beams[k])
+                    class_b_beams.append(b_beams[k])
+
+            distances1, dist1_set, dens1_curve = grainStats.stats_preprocess(class_a_beams, step)
+            distances2, dist2_set, dens2_curve = grainStats.stats_preprocess(class_b_beams, step)
+
+            all_a_beams.append(class_a_beams)
+            all_b_beams.append(class_b_beams)
 
             angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),
                                                                                 step=step)
@@ -1250,6 +1252,8 @@ class grainGenerate():
             np.save(f'{folder}/' + CfgBeamsNames.approx + f'{name}' + f'{step}.npy', np.array(xy_linear))
             np.save(f'{folder}/' + CfgBeamsNames.approx_data + f'{name}' + f'{step}.npy', np.array(xy_linear_data))
             np.save(f'{folder}/' + CfgBeamsNames.legend + f'{name}' + f'{step}.npy', np.array(texts))
+            np.save(f'{folder}/' + CfgBeamsNames.original_values_a + f'{name}' + f'{step}.npy', np.array(all_a_beams))
+            np.save(f'{folder}/' + CfgBeamsNames.original_values_b + f'{name}' + f'{step}.npy', np.array(all_b_beams))
 
 
 class GrainLogs():
