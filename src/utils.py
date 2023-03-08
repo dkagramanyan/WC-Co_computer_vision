@@ -1172,7 +1172,7 @@ class grainGenerate():
 
     @classmethod
     def diametr_approx_save(cls, save_path, images, paths, types_dict, step, pixel, start=2, end=-3,
-                            debug=False,max_images_num_per_class=None):
+                            debug=False, max_images_num_per_class=None):
         """
         :param folder: str
         :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
@@ -1190,7 +1190,7 @@ class grainGenerate():
         # вычисление и сохранение распределения длин а- и б- полуосей и угла поворота эллипса для разных образцов
         #
 
-        json_data=[]
+        json_data = []
 
         angles = None
 
@@ -1200,7 +1200,7 @@ class grainGenerate():
             all_b_beams = []
 
             for j, image in enumerate(tqdm(images_list[:max_images_num_per_class])):
-                a_beams, b_beams, angles, cetroids = grainMark.get_mvee_params(image, 0.2, debug=debug)
+                b_beams, a_beams, angles, cetroids = grainMark.get_mvee_params(image, 0.2, debug=debug)
 
                 all_a_beams.extend(a_beams)
                 all_b_beams.extend(b_beams)
@@ -1229,30 +1229,31 @@ class grainGenerate():
             (x_pred1, y_pred1), k1, b1, angle1, score1 = grainApprox.lin_regr_approx(x1, y1)
             (x_pred2, y_pred2), k2, b2, angle2, score2 = grainApprox.lin_regr_approx(x2, y2)
 
-
             dist_step = pixel * step
 
-            name=paths[i].split('/')[-1]
+            name = paths[i].split('/')[-1]
 
             legend1 = grainGenerate.beams_legend(name, types_dict[name], norm1, k1, angle1, b1, score1, dist_step,
                                                  distances1.mean() * pixel)
             legend2 = grainGenerate.beams_legend(name, types_dict[name], norm2, k2, angle2, b2, score2, dist_step,
                                                  distances2.mean() * pixel)
 
-
-            json_data.append({'path':paths[i],
-                              'name':name,
-                              'type':types_dict[name],
-                              'legend':[{'a_beams':legend1,'b_beams':legend2}],
-                              'density_curve_scatter':[{'a_beams':(x1.flatten(),y1.flatten()),'b_beams':(x2.flatten(),y2.flatten())}],
-                              'linear_approx_plot':[{'a_beams':(x_pred1.flatten(), y_pred1.flatten()),'b_beams':(x_pred2.flatten(), y_pred2.flatten())}],
-                              'linear_approx_data':[{'a_beams':{'k':k1,'b':b1,'angle':angle1,'score':score1},'b_beams':{'k':k2,'b':b2,'angle':angle2,'score':score2}}],
-                              'beams_length_series':[{'a_beams':all_a_beams,'b_beams':all_b_beams}],
-                              'pixel2meter':pixel,
+            json_data.append({'path': paths[i],
+                              'name': name,
+                              'type': types_dict[name],
+                              'legend': [{'a_beams': legend1, 'b_beams': legend2}],
+                              'density_curve_scatter': [
+                                  {'a_beams': (x1.flatten(), y1.flatten()), 'b_beams': (x2.flatten(), y2.flatten())}],
+                              'linear_approx_plot': [{'a_beams': (x_pred1.flatten(), y_pred1.flatten()),
+                                                      'b_beams': (x_pred2.flatten(), y_pred2.flatten())}],
+                              'linear_approx_data': [{'a_beams': {'k': k1, 'b': b1, 'angle': angle1, 'score': score1},
+                                                      'b_beams': {'k': k2, 'b': b2, 'angle': angle2, 'score': score2}}],
+                              'beams_length_series': [{'a_beams': all_a_beams, 'b_beams': all_b_beams}],
+                              'pixel2meter': pixel,
                               })
 
-        with open(f'{save_path}_step_{step}_beams.json', 'w',encoding='utf-8') as outfile:
-            json.dump({'data':json_data}, outfile,cls=cls.NumpyEncoder,ensure_ascii=False)
+        with open(f'{save_path}_step_{step}_beams.json', 'w', encoding='utf-8') as outfile:
+            json.dump({'data': json_data}, outfile, cls=cls.NumpyEncoder, ensure_ascii=False)
 
 
 class GrainLogs():
