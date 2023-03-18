@@ -13,6 +13,8 @@ class CfgBeamsNames():
     approx = 'beams_linear_xy_step_'
     approx_data = 'beams_linear_data_step_'
     legend = 'beams_legend_step_'
+    original_values_a = 'beams_original_values_a_step_'
+    original_values_b = 'beams_original_values_b_step_'
 
 
 class CfgDataset():
