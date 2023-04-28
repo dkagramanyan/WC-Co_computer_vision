@@ -598,7 +598,6 @@ class grainMark():
         b_beams = np.array(b_beams, dtype='int32')
         angles = np.array(angles, dtype='float32')
         centroids = np.array(centroids, dtype='int32')
-        contours = np.array(contours, dtype='int32')
 
         return a_beams, b_beams, angles, centroids,contours
 
@@ -996,8 +995,8 @@ class grainApprox():
     @classmethod
     def lin_regr_approx(cls, x, y):
         """
-        :param x: list (n,)
-        :param y: list (n,)
+        :param x: list (n,1)
+        :param y: list (n,1)
         :return: (x_pred, y_pred), k, b, angle, score
         """
         #
