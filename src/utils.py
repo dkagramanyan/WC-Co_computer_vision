@@ -558,17 +558,20 @@ class grainMark():
         # сдвигается на центроид полигона (исследуемого региона),
         # а затем сдвигается на среднее значение координат полигона
         # 
-        approx = grainMark.get_row_contours(image)
+        raw_contours = grainMark.get_row_contours(image)
         a_beams = []
         b_beams = []
         angles = []
         centroids = []
 
-        for i, cnt in enumerate(approx):
+        contours=[]
+
+        for i, cnt in enumerate(raw_contours):
             if len(cnt) > 2:
                 try:
                     cnt = np.array(cnt)
                     polygon = Polygon(cnt)
+                    contours.append(cnt)
 
                     x_centroid, y_centroid = polygon.centroid.coords[0]
                     points = cnt - (x_centroid, y_centroid)
@@ -595,8 +598,9 @@ class grainMark():
         b_beams = np.array(b_beams, dtype='int32')
         angles = np.array(angles, dtype='float32')
         centroids = np.array(centroids, dtype='int32')
+        contours = np.array(contours, dtype='int32')
 
-        return a_beams, b_beams, angles, centroids
+        return a_beams, b_beams, angles, centroids,contours
 
     @classmethod
     def skeletons_coords(cls, image):
@@ -654,7 +658,7 @@ class grainShow():
         #
         # Выводит точки многоугольника с позиции pos и описанного вокруг него эллипса
         #
-        a_beams, b_beams, angles, cetroids = grainMark.get_mvee_params(image, tolerance)
+        a_beams, b_beams, angles, cetroids, contours = grainMark.get_mvee_params(image, tolerance)
         approx = grainMark.get_row_contours(image)
 
         a = a_beams[pos]
@@ -1198,33 +1202,41 @@ class grainGenerate():
 
             all_a_beams = []
             all_b_beams = []
+            all_angles = []
+            all_contours = []
 
             for j, image in enumerate(tqdm(images_list[:max_images_num_per_class])):
-                b_beams, a_beams, angles, cetroids = grainMark.get_mvee_params(image, 0.2, debug=debug)
+                b_beams, a_beams, angles, cetroids, contours = grainMark.get_mvee_params(image, 0.2, debug=debug)
 
                 all_a_beams.extend(a_beams)
                 all_b_beams.extend(b_beams)
+                all_angles.extend(angles)
+                all_contours.extend((contours))
 
             distances1, dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
             distances2, dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
 
-            # angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),step=step)
+            angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),step=step)
 
             norm1 = round(np.sum(dens1_curve), 6)
             norm2 = round(np.sum(dens2_curve), 6)
+            norm_angles = round(np.sum(angles_dens_curve), 6)
 
             x1 = np.array([dist1_set]).reshape(-1, 1) * pixel
+            x2 = np.array([dist2_set]).reshape(-1, 1) * pixel
+            x_angles = np.array([angles_set]).reshape(-1, 1)
 
             y1 = np.log([dens1_curve / norm1]).reshape(-1, 1)
-
-            x2 = np.array([dist2_set]).reshape(-1, 1) * pixel
             y2 = np.log([dens2_curve / norm2]).reshape(-1, 1)
+            y_angles= np.array([angles_dens_curve / norm_angles]).reshape(-1, 1)
 
             x1 = x1[start:end]
-            y1 = y1[start:end]
-
             x2 = x2[start:end]
+            x_angles = x_angles[start:end]
+
+            y1 = y1[start:end]
             y2 = y2[start:end]
+            y_angles = y_angles[start:end]
 
             (x_pred1, y_pred1), k1, b1, angle1, score1 = grainApprox.lin_regr_approx(x1, y1)
             (x_pred2, y_pred2), k2, b2, angle2, score2 = grainApprox.lin_regr_approx(x2, y2)
@@ -1243,12 +1255,18 @@ class grainGenerate():
                               'type': types_dict[name],
                               'legend': [{'a_beams': legend1, 'b_beams': legend2}],
                               'density_curve_scatter': [
-                                  {'a_beams': (x1.flatten(), y1.flatten()), 'b_beams': (x2.flatten(), y2.flatten())}],
+                                  {'a_beams': (x1.flatten(), y1.flatten()),
+                                   'b_beams': (x2.flatten(), y2.flatten()),
+                                   'angles':(x_angles.flatten(), y_angles.flatten())
+                                   }
+                              ],
                               'linear_approx_plot': [{'a_beams': (x_pred1.flatten(), y_pred1.flatten()),
                                                       'b_beams': (x_pred2.flatten(), y_pred2.flatten())}],
                               'linear_approx_data': [{'a_beams': {'k': k1, 'b': b1, 'angle': angle1, 'score': score1},
                                                       'b_beams': {'k': k2, 'b': b2, 'angle': angle2, 'score': score2}}],
                               'beams_length_series': [{'a_beams': all_a_beams, 'b_beams': all_b_beams}],
+                              'angles_series': all_angles,
+                              'contours_series': all_contours,
                               'pixel2meter': pixel,
                               })
 
