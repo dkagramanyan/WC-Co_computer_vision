@@ -45,6 +45,8 @@ from logging import StreamHandler, Formatter
 from src.cfg import CfgAnglesNames, CfgBeamsNames, CfgDataset
 import json
 
+from collections import Counter
+
 handler = StreamHandler(stream=sys.stdout)
 handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
 
@@ -564,7 +566,7 @@ class grainMark():
         angles = []
         centroids = []
 
-        contours=[]
+        contours = []
 
         for i, cnt in enumerate(raw_contours):
             if len(cnt) > 2:
@@ -599,7 +601,7 @@ class grainMark():
         angles = np.array(angles, dtype='float32')
         centroids = np.array(centroids, dtype='int32')
 
-        return a_beams, b_beams, angles, centroids,contours
+        return a_beams, b_beams, angles, centroids, contours
 
     @classmethod
     def skeletons_coords(cls, image):
@@ -821,22 +823,28 @@ class grainStats():
         """
         #
         # приведение углов к кратости, например 0,step,2*step и тд
+        # работает только для целых чисел!!!
         #
-        array_copy = array.copy()
+        new_array = []
         if step != 0:
-            for i, a in enumerate(array_copy):
-                while array_copy[i] % step != 0:
-                    array_copy[i] += 1
+            for i, a in enumerate(array):
+                array_element = array[i]
+                val = array_element % step
+                if val != 0:
+                    if val < step / 2:
+                        array_element = array_element - val
+                    else:
+                        array_element = array_element + step - val
+                new_array.append(array_element)
 
-            array_copy_set = np.sort(np.array(list(set(array_copy))))
-            dens_curve = []
-            for arr in array_copy_set:
-                num = 0
-                for ar in array_copy:
-                    if arr == ar:
-                        num += 1
-                dens_curve.append(num)
-            return np.array(array_copy), array_copy_set, np.array(dens_curve)
+            new_array = np.round(new_array)
+
+            cnt = Counter(new_array)
+            counts = np.array(list(cnt.items()))
+            counts = counts[counts[:, 0].argsort()]
+
+            # polygon_areas, areas_set, areas_dens_curve
+            return np.array(new_array), counts[:, 0], counts[:, 1]
         else:
             print('step is 0, stats preprocess error')
 
@@ -1215,7 +1223,8 @@ class grainGenerate():
             distances1, dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
             distances2, dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
 
-            angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),step=step)
+            angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),
+                                                                                step=step)
 
             norm1 = round(np.sum(dens1_curve), 6)
             norm2 = round(np.sum(dens2_curve), 6)
@@ -1227,7 +1236,7 @@ class grainGenerate():
 
             y1 = np.log([dens1_curve / norm1]).reshape(-1, 1)
             y2 = np.log([dens2_curve / norm2]).reshape(-1, 1)
-            y_angles= np.array([angles_dens_curve / norm_angles]).reshape(-1, 1)
+            y_angles = np.array([angles_dens_curve / norm_angles]).reshape(-1, 1)
 
             x1 = x1[start:end]
             x2 = x2[start:end]
@@ -1256,7 +1265,7 @@ class grainGenerate():
                               'density_curve_scatter': [
                                   {'a_beams': (x1.flatten(), y1.flatten()),
                                    'b_beams': (x2.flatten(), y2.flatten()),
-                                   'angles':(x_angles.flatten(), y_angles.flatten())
+                                   'angles': (x_angles.flatten(), y_angles.flatten())
                                    }
                               ],
                               'linear_approx_plot': [{'a_beams': (x_pred1.flatten(), y_pred1.flatten()),
