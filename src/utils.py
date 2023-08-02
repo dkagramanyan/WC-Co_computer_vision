@@ -1134,6 +1134,7 @@ class grainGenerate():
             np.save(f'{folder}/' + CfgAnglesNames.approx + f'{name}' + f'{step}.npy', np.array(xy_gauss))
             np.save(f'{folder}/' + CfgAnglesNames.approx_data + f'{name}' + f'{step}.npy', np.array(xy_gauss_data))
             np.save(f'{folder}/' + CfgAnglesNames.legend + f'{name}' + f'{step}.npy', np.array(texts))
+            
 
     @classmethod
     def beams_legend(cls, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
@@ -1164,7 +1165,6 @@ class grainGenerate():
 
         return legend
 
-    @classmethod
     class NumpyEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, np.ndarray):
@@ -1209,13 +1209,13 @@ class grainGenerate():
 
                 all_a_beams.extend(a_beams)
                 all_b_beams.extend(b_beams)
-                all_angles.extend(angles)
+                all_angles.extend(np.rad2deg(angles).astype('int32'))
                 all_contours.extend((contours))
 
             distances1, dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
             distances2, dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
 
-            angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),step=step)
+            angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(all_angles,step=step)
 
             norm1 = round(np.sum(dens1_curve), 6)
             norm2 = round(np.sum(dens2_curve), 6)
@@ -1249,6 +1249,7 @@ class grainGenerate():
             legend2 = grainGenerate.beams_legend(name, types_dict[name], norm2, k2, angle2, b2, score2, dist_step,
                                                  distances2.mean() * pixel)
 
+
             json_data.append({'path': paths[i],
                               'name': name,
                               'type': types_dict[name],
@@ -1269,8 +1270,12 @@ class grainGenerate():
                               'pixel2meter': pixel,
                               })
 
+
         with open(f'{save_path}_step_{step}_beams.json', 'w', encoding='utf-8') as outfile:
             json.dump({'data': json_data}, outfile, cls=cls.NumpyEncoder, ensure_ascii=False)
+
+
+
 
 
 class GrainLogs():
