@@ -42,7 +42,6 @@ import time
 import glob
 from logging import StreamHandler, Formatter
 
-from src.cfg import CfgAnglesNames, CfgBeamsNames, CfgDataset
 import json
 
 from collections import Counter
