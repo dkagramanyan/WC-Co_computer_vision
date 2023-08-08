@@ -839,11 +839,11 @@ class grainStats():
             new_array = np.round(new_array)
 
             cnt = Counter(new_array)
-            counts = np.array(list(cnt.items()))
+            counts = np.array(list(cnt.items()),dtype=np.float32)
             counts = counts[counts[:, 0].argsort()]
 
             # polygon_areas, areas_set, areas_dens_curve
-            return np.array(new_array), counts[:, 0], counts[:, 1]
+            return np.array(new_array,dtype=np.float32), counts[:, 0], counts[:, 1]
         else:
             print('step is 0, stats preprocess error')
 
@@ -1083,67 +1083,57 @@ class grainGenerate():
         return legend
 
     @classmethod
-    def angles_approx_save(cls, folder, images, name, names, types_dict, step, save=True):
+    def angles_approx_save(cls, save_path, images, paths, types_dict, step, max_images_num_per_class=None):
         """
-        :param folder: str path to dir
+        :param save_path:
         :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
-        :param names: list str [class_name1,class_name2,..]
-        :param types: list str [class_type1,class_type2,..]
+        :param paths:
+        :param types_dict: list str [class_type1,class_type2,..]
         :param step: scalar int [0,N]
-        :param save: bool
+        :param max_images_num_per_class:
         """
-        #
-        # вычисление и сохранение распределения углов для всех фотографий одного образца
-        #
+    #
+    # вычисление и сохранение распределения углов для всех фотографий одного образца
+    #
 
-        texts = []
-        xy_scatter = []
-        xy_gauss = []
-        xy_gauss_data = []
-
-        if not os.path.exists(folder):
-            os.mkdir(folder)
+        json_data = []
 
         for i, images_list in tqdm(enumerate(images)):
-            all_original_angles = []
+            all_angles = []
+            all_unique_angels=dict()
 
-            for j, image in enumerate(images_list):
-                original_angles = grainMark.get_angles(image)
+            for j, image in enumerate(tqdm(images_list[:max_images_num_per_class])):
+                ang=grainMark.get_angles(image)
+                all_unique_angels[j]=ang
+                all_angles.extend(ang)
 
-                for angle in original_angles:
-                    all_original_angles.append(angle)
+            angles, angles_set, dens_curve = grainStats.stats_preprocess(all_angles, step)
 
-            angles, angles_set, dens_curve = grainStats.stats_preprocess(all_original_angles, step)
-
-            x = angles_set.astype(np.float64)
-            y = dens_curve
-
-            norm = np.sum(y)
-            y = y / norm
+            x = angles_set
+            norm = np.sum(dens_curve)
+            y = dens_curve/norm
 
             (x_gauss, y_gauss), mus, sigmas, amps = grainApprox.bimodal_gauss_approx(x, y)
 
-            text = grainGenerate.angles_legend(len(images_list), names[i], types_dict[names[i]], step, mus, sigmas,
-                                               amps, norm)
+            name = paths[i].split('/')[-1]
 
-            xy_gauss.append((x_gauss, y_gauss))
-            xy_scatter.append((x, y))
-            xy_gauss_data.append((
-                (mus[0], sigmas[0], amps[0]),
-                (mus[1], sigmas[1], amps[1])
-            ))
+            text = grainGenerate.angles_legend(max_images_num_per_class, types_dict[name], types_dict[name], step, mus, sigmas,amps, norm)
 
-            texts.append(text)
+            json_data.append({'path': paths[i],
+                              'name': name,
+                              'type': types_dict[name],
+                              'legend': text,
+                              'density_curve_scatter': [x,y],
+                              'gauss_approx_plot': [x_gauss, y_gauss],
+                              'gauss_approx_data': {'mus': mus, 'sigmas':sigmas, 'amps':amps},
+                              'angles_series': all_unique_angels,
+                              })
 
-        if save:
-            np.save(f'{folder}/' + CfgAnglesNames.values + f'{name}' + f'{step}.npy',
-                    np.array(xy_scatter, dtype=object))
-            np.save(f'{folder}/' + CfgAnglesNames.approx + f'{name}' + f'{step}.npy', np.array(xy_gauss))
-            np.save(f'{folder}/' + CfgAnglesNames.approx_data + f'{name}' + f'{step}.npy', np.array(xy_gauss_data))
-            np.save(f'{folder}/' + CfgAnglesNames.legend + f'{name}' + f'{step}.npy', np.array(texts))
+        with open(f'{save_path}_step_{step}_angles.json', 'w', encoding='utf-8') as outfile:
+            json.dump({'data': json_data}, outfile, cls=cls.NumpyEncoder, ensure_ascii=False)
 
     @classmethod
-    def beams_legend(cls, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
+    def beams_legend(cls,images_amount, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
         """
         :param name: str
         :param itype: str
@@ -1164,14 +1154,15 @@ class grainGenerate():
         num = '\n регионы Co ' + str(norm) + ' шт'
         lin_k = '\n k наклона ' + str(round((k), 3)) + ' сдвиг b ' + str(round(b, 3))
         lin_k_angle = '\n угол наклона $' + str(round(angle, 3)) + '^{\circ}$'
+        images_number_t = '\n количество снимков ' + str(images_amount)
         acc = '\n точность ' + str(round(score, 2))
         text_step = '\n шаг длины ' + str(dist_step) + '$ мкм$'
         mean_text = '\n средняя длина ' + str(round(dist_mean, 2))
-        legend = border + tp + lin_k + lin_k_angle + acc + num + text_step + mean_text
+        legend = border + tp + lin_k + lin_k_angle + images_number_t +acc + num + text_step + mean_text
 
         return legend
 
-    @classmethod
+    @staticmethod
     class NumpyEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, np.ndarray):
