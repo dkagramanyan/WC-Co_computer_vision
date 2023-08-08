@@ -26,4 +26,7 @@
 /datasets/*
 
 /tests/__pycache__/*
+/cv/.ipynb_checkpoints/*
+/ml/.ipynb_checkpoints/*
+/cv/__pycache__/*
 
