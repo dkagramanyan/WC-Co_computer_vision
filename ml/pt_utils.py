@@ -529,5 +529,5 @@ class Embeddings():
 
         ax.legend(legend, fontsize=fontsize)
         if save and name:
-            plt.savefig(f'{name}.png')
+            plt.savefig(f'{name}.png', bbox_inches = 'tight')
         plt.show()
