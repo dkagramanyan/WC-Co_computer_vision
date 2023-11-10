@@ -30,3 +30,11 @@
 /ml/.ipynb_checkpoints/*
 /cv/__pycache__/*
 
+/ml/linear interpolation/Outputs/*
+/ml/linear interpolation/Models/*
+/ml/linear interpolation/Data_a/*
+/ml/linear interpolation/Geometry/__pycache__/*
+/ml/linear interpolation/Geometry/.ipynb_checkpoints/*
+/ml/linear interpolation/__pycache__/*
+/ml/__pycache__/*
+
