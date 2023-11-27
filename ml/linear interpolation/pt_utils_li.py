@@ -442,6 +442,7 @@ class VQVAE(nn.Module):
             embed_dim=8,
             n_embed=512,
             decay=0.99,
+            umap_path=None,
     ):
         super().__init__()
 
@@ -466,6 +467,9 @@ class VQVAE(nn.Module):
             stride=4,
         )
         self.embed_dim=embed_dim
+        if umap_path is not None:
+            self.umap=umaped_vct_tb_loaded = pickle.load((open(umap_path, 'rb')))
+            
 
     def forward(self, input):
         quant_t, quant_b, diff, _, _ = self.encode(input)
@@ -510,16 +514,34 @@ class VQVAE(nn.Module):
 
         return dec
     
-    def decode_li(self, z,):
+    def decode_li(self, z,t_size=32,b_size=64, N=1024 ):
         
         # print(z.shape)
-        quant_t, quant_b=z[:,:4096], z[:, 4096:]
+        quant_t, quant_b=z[:,:N], z[:, N:]
         
-        quant_t=quant_t.reshape((-1, self.embed_dim, 64, 64))
-        quant_b=quant_b.reshape((-1, self.embed_dim, 128, 128))
+        quant_t=quant_t.reshape((-1, self.embed_dim, t_size, t_size))
+        quant_b=quant_b.reshape((-1, self.embed_dim, b_size, b_size))
         
         print(quant_t.shape)
         print(quant_b.shape)
+        
+        upsample_t = self.upsample_t(quant_t)
+        quant = torch.cat([upsample_t, quant_b], 1)
+        dec = self.dec(quant)
+
+        return dec
+    
+    def decode_li_umap(self, z,t_size=32,b_size=64, N=1024 ):
+        
+        quant_tb=self.umap.inverse_transform(z.cpu().detach().numpy())
+        
+        quant_t, quant_b=quant_tb[:,:N], quant_tb[:, N:]
+        
+        quant_t=quant_t.reshape((-1, self.embed_dim, t_size, t_size))
+        quant_b=quant_b.reshape((-1, self.embed_dim, b_size, b_size))
+        
+        # print(quant_t.shape)
+        # print(quant_b.shape)
         
         upsample_t = self.upsample_t(quant_t)
         quant = torch.cat([upsample_t, quant_b], 1)
@@ -536,7 +558,8 @@ class VQVAE(nn.Module):
         dec = self.decode(quant_t, quant_b)
 
         return dec
-
+    
+    
 class QuantizeAdaptive(nn.Module):
     def __init__(self, dim, n_embed, decay=0.99, eps=1e-5):
         super().__init__()

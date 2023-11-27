@@ -439,9 +439,10 @@ class VQVAE(nn.Module):
             channel=128,
             n_res_block=5,
             n_res_channel=32,
-            embed_dim=64,
+            embed_dim=8,
             n_embed=512,
             decay=0.99,
+            umap_path=None,
     ):
         super().__init__()
 
@@ -465,6 +466,10 @@ class VQVAE(nn.Module):
             n_res_channel,
             stride=4,
         )
+        self.embed_dim=embed_dim
+        if umap_path is not None:
+            self.umap=umaped_vct_tb_loaded = pickle.load((open(umap_path, 'rb')))
+            
 
     def forward(self, input):
         quant_t, quant_b, diff, _, _ = self.encode(input)
@@ -508,6 +513,41 @@ class VQVAE(nn.Module):
         dec = self.dec(quant)
 
         return dec
+    
+    def decode_li(self, z,t_size=32,b_size=64, N=1024 ):
+        
+        # print(z.shape)
+        quant_t, quant_b=z[:,:N], z[:, N:]
+        
+        quant_t=quant_t.reshape((-1, self.embed_dim, t_size, t_size))
+        quant_b=quant_b.reshape((-1, self.embed_dim, b_size, b_size))
+        
+        print(quant_t.shape)
+        print(quant_b.shape)
+        
+        upsample_t = self.upsample_t(quant_t)
+        quant = torch.cat([upsample_t, quant_b], 1)
+        dec = self.dec(quant)
+
+        return dec
+    
+    def decode_li_umap(self, z,t_size=32,b_size=64, N=1024 ):
+        
+        quant_tb=self.umap.inverse_transform(z)
+        
+        quant_t, quant_b=quant_tb[:,:N], quant_tb[:, N:]
+        
+        quant_t=quant_t.reshape((-1, self.embed_dim, t_size, t_size))
+        quant_b=quant_b.reshape((-1, self.embed_dim, b_size, b_size))
+        
+        # print(quant_t.shape)
+        # print(quant_b.shape)
+        
+        upsample_t = self.upsample_t(quant_t)
+        quant = torch.cat([upsample_t, quant_b], 1)
+        dec = self.dec(quant)
+
+        return dec
 
     def decode_code(self, code_t, code_b):
         quant_t = self.quantize_t.embed_code(code_t)
@@ -518,7 +558,8 @@ class VQVAE(nn.Module):
         dec = self.decode(quant_t, quant_b)
 
         return dec
-
+    
+    
 class QuantizeAdaptive(nn.Module):
     def __init__(self, dim, n_embed, decay=0.99, eps=1e-5):
         super().__init__()
