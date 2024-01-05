@@ -208,60 +208,6 @@ class Quantize(nn.Module):
     def embed_code(self, embed_id):
         return F.embedding(embed_id, self.embed.transpose(0, 1))
 
-class QuantizeAdaptive(nn.Module):
-    def __init__(self, dim, n_embed, decay=0.99, eps=1e-5):
-        super().__init__()
-
-        self.dim = dim
-        self.n_embed = n_embed
-        self.decay = decay
-        self.eps = eps
-
-        embed = torch.randn(dim, n_embed)
-        self.register_buffer("embed", embed)
-        self.register_buffer("cluster_size", torch.zeros(n_embed))
-        self.register_buffer("embed_avg", embed.clone())
-
-    def forward(self, input, n_embedded_l=-1, din_l=-1):
-        print(input)
-        flatten = input.reshape(-1, self.dim)
-        dist = (
-                flatten.pow(2).sum(1, keepdim=True)
-                - 2 * flatten @ self.embed
-                + self.embed.pow(2).sum(0, keepdim=True)
-        )
-        _, embed_ind = (-dist).max(1)
-        embed_onehot = F.one_hot(embed_ind, self.n_embed).type(flatten.dtype)
-        embed_ind = embed_ind.view(*input.shape[:-1])
-        quantize = self.embed_code(embed_ind)
-
-        if self.training:
-            embed_onehot_sum = embed_onehot.sum(0)
-            embed_sum = flatten.transpose(0, 1) @ embed_onehot
-
-            all_reduce(embed_onehot_sum)
-            all_reduce(embed_sum)
-
-            self.cluster_size.data.mul_(self.decay).add_(
-                embed_onehot_sum, alpha=1 - self.decay
-            )
-            self.embed_avg.data.mul_(self.decay).add_(embed_sum, alpha=1 - self.decay)
-            n = self.cluster_size.sum()
-            cluster_size = (
-                    (self.cluster_size + self.eps) / (n + self.n_embed * self.eps) * n
-            )
-            embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
-            self.embed.data.copy_(embed_normalized)
-
-        diff = (quantize.detach() - input).pow(2).mean()
-        quantize = input + (quantize - input).detach()
-        print(quantize)
-        return quantize, diff, embed_ind
-
-    def embed_code(self, embed_id):
-        return F.embedding(embed_id, self.embed.transpose(0, 1))
-
-
 
 class ResBlock(nn.Module):
     def __init__(self, in_channel, channel):
@@ -558,8 +504,8 @@ class VQVAE(nn.Module):
         dec = self.decode(quant_t, quant_b)
 
         return dec
-    
-    
+
+
 class QuantizeAdaptive(nn.Module):
     def __init__(self, dim, n_embed, decay=0.99, eps=1e-5):
         super().__init__()
@@ -575,7 +521,7 @@ class QuantizeAdaptive(nn.Module):
         self.register_buffer("embed_avg", embed.clone())
 
     def forward(self, input, n_embedded_l=None, dim_l=None):
-
+        
         flatten = input.reshape(-1, self.dim)
         dist = (
                 flatten.pow(2).sum(1, keepdim=True)
@@ -607,12 +553,16 @@ class QuantizeAdaptive(nn.Module):
 
         diff = (quantize.detach() - input).pow(2).mean()
         quantize = input + (quantize - input).detach()
-
-        return quantize[:,:,:,:dim_l], diff, embed_ind
+        
+        if dim_l!=None:
+            quantize[:,:,:,dim_l:]=0
+        
+        # return quantize[:,:,:,:dim_l], diff, embed_ind
+        return quantize, diff, embed_ind
 
     def embed_code(self, embed_id):
         return F.embedding(embed_id, self.embed.transpose(0, 1))
-
+    
 class Vqvae2Adaptive(nn.Module):
     def __init__(
             self,
@@ -645,20 +595,20 @@ class Vqvae2Adaptive(nn.Module):
             n_res_block,
             n_res_channel,
             stride=4,
-            )
+        )
 
-    def forward(self, input):
-        quant_t, quant_b, diff, _, _ = self.encode(input)
+    def forward(self, input,n_embedded_l, dim_l):
+        quant_t, quant_b, diff, _, _ = self.encode(input,n_embedded_l=n_embedded_l, dim_l=dim_l)
         dec = self.decode(quant_t, quant_b)
 
         return dec, diff
 
-    def encode(self, input):
+    def encode(self, input,n_embedded_l, dim_l):
         enc_b = self.enc_b(input)
         enc_t = self.enc_t(enc_b)
 
         quant_t = self.quantize_conv_t(enc_t).permute(0, 2, 3, 1)
-        quant_t, diff_t, id_t = self.quantize_t(quant_t)
+        quant_t, diff_t, id_t = self.quantize_t(quant_t, n_embedded_l=n_embedded_l, dim_l=dim_l )
         quant_t = quant_t.permute(0, 3, 1, 2)
         diff_t = diff_t.unsqueeze(0)
 
@@ -666,7 +616,7 @@ class Vqvae2Adaptive(nn.Module):
         enc_b = torch.cat([dec_t, enc_b], 1)
 
         quant_b = self.quantize_conv_b(enc_b).permute(0, 2, 3, 1)
-        quant_b, diff_b, id_b = self.quantize_b(quant_b)
+        quant_b, diff_b, id_b = self.quantize_b(quant_b, n_embedded_l=n_embedded_l, dim_l=dim_l )
 
         quant_b = quant_b.permute(0, 3, 1, 2)
         diff_b = diff_b.unsqueeze(0)
@@ -680,15 +630,22 @@ class Vqvae2Adaptive(nn.Module):
 
         return dec
 
-    def encode_t(self, input, n_embedded_l=1, dim_l=1 ):
+    def encode_t_b(self, input, n_embedded_l=1, dim_l=1 ):
         enc_b = self.enc_b(input)
+        
         enc_t = self.enc_t(enc_b)
-
         quant_t = self.quantize_conv_t(enc_t).permute(0, 2, 3, 1)
-        quant_t, diff_t, id_t = self.quantize_t(quant_t, n_embedded_l=n_embedded_l, dim_l=dim_l )
+        quant_t, _, _ = self.quantize_t(quant_t, n_embedded_l=n_embedded_l, dim_l=dim_l )
         quant_t = quant_t.permute(0, 3, 1, 2)
+        
+        dec_t = self.dec_t(quant_t)
+        enc_b = torch.cat([dec_t, enc_b], 1)
+        quant_b = self.quantize_conv_b(enc_b).permute(0, 2, 3, 1)
+        quant_b, _, _ = self.quantize_b(quant_b, n_embedded_l=n_embedded_l, dim_l=dim_l )
 
-        return quant_t
+        quant_b = quant_b.permute(0, 3, 1, 2)
+
+        return quant_t, quant_b
 
     def decode_code(self, code_t, code_b):
         quant_t = self.quantize_t.embed_code(code_t)
@@ -699,6 +656,7 @@ class Vqvae2Adaptive(nn.Module):
         dec = self.decode(quant_t, quant_b)
 
         return dec
+
 
 
 class Embeddings():
@@ -740,7 +698,7 @@ class Embeddings():
         return np.array(images_embs_t), np.array(images_embs_b)
 
     @classmethod
-    def get_vqvae2_embs_t_adaptive(cls, vqvae2_model, dataset,n_embedded_l=-1,dim_l=-1,  device='cuda'):
+    def get_vqvae2_embs_adaptive(cls, vqvae2_model, dataset,n_embedded_l=-1,dim_l=-1,  device='cuda'):
         images_embs_t = []
         images_embs_b = []
 
@@ -765,16 +723,16 @@ class Embeddings():
 
                 vqvae2_model.zero_grad()
 
-                quant_t= vqvae2_model.encode_t(image,n_embedded_l=n_embedded_l, dim_l=dim_l)
+                quant_t, quant_b= vqvae2_model.encode_t_b(image,n_embedded_l=n_embedded_l, dim_l=dim_l)
 
                 swapped_t = quant_t.cpu().detach().numpy().flatten()
-                # swapped_b = quant_b.cpu().detach().numpy().flatten()
+                swapped_b = quant_b.cpu().detach().numpy().flatten()
 
                 images_embs_t.append(swapped_t)
-                # images_embs_b.append(swapped_b)
+                images_embs_b.append(swapped_b)
 
-        # return np.array(images_embs_t), np.array(images_embs_b)
-        return np.array(images_embs_t)
+        return np.array(images_embs_t), np.array(images_embs_b)
+
 
     @classmethod
     def plot_2d_scatter_embs(cls, embs_scatter, legend, r_shape=(5, 360, 2), dot_size=20, fontsize=15, save=False,
@@ -802,6 +760,7 @@ class Embeddings():
         for i in range(len(scatter_xy)):
             ax.scatter(scatter_xy[i, :, 0], scatter_xy[i, :, 1], color=colors[i], s=dot_size,
                        marker=markers[i])
+            
 
         ax.legend(legend, fontsize=fontsize)
         if save and name:
