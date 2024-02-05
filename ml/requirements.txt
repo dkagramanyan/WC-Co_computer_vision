@@ -66,7 +66,7 @@ etelemetry==0.3.0
 evaluate==0.4.0
 everett==3.1.0
 executing @ file:///opt/conda/conda-bld/executing_1646925071911/work
-fastapi==0.101.0
+fastapi==0.109.1
 fastjsonschema @ file:///C:/Users/BUILDE~1/AppData/Local/Temp/abs_ebruxzvd08/croots/recipe/python-fastjsonschema_1661376484940/work
 ffmpy==0.3.1
 filelock==3.12.2
