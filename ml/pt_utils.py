@@ -22,7 +22,7 @@ from torchvision import datasets, transforms, utils
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple
 from torchvision.datasets import ImageFolder
 from numpy import random
-
+from abc import abstractmethod
 
 LOCAL_PROCESS_GROUP = None
 
@@ -725,6 +725,290 @@ class Vqvae2Adaptive(nn.Module):
         dec = self.decode(quant_t, quant_b)
 
         return dec
+
+class BaseModel(nn.Module):
+    """
+    Base class for all models
+    """
+    @abstractmethod
+    def forward(self, *inputs):
+        """
+        Forward pass logic
+
+        :return: Model output
+        """
+        raise NotImplementedError
+
+    def __str__(self):
+        """
+        Model prints with number of trainable parameters
+        """
+        model_parameters = filter(lambda p: p.requires_grad, self.parameters())
+        params = sum([np.prod(p.size()) for p in model_parameters])
+        return super().__str__() + '\nTrainable parameters: {}'.format(params)
+
+
+class VanillaVAE(BaseModel):
+
+    def __init__(self,
+                 in_channels: int,
+                 latent_dims: int,
+                 hidden_dims: List[int] = None,
+                 flow_check=False,
+                 out_channels=3,
+                 **kwargs) -> None:
+        """Instantiates the VAE model
+
+        Params:
+            in_channels (int): Number of input channels
+            latent_dims (int): Size of latent dimensions
+            hidden_dims (List[int]): List of hidden dimensions
+        """
+        super(VanillaVAE, self).__init__()
+        self.latent_dim = latent_dims
+        self.flow_check = flow_check
+
+        if self.flow_check:
+            self.flow = Flow(self.latent_dim, 'planar', 16)
+
+        modules = []
+        if hidden_dims is None:
+            hidden_dims = [32, 64, 128, 256, 512]
+
+        # Build Encoder
+        for h_dim in hidden_dims:
+            modules.append(
+                nn.Sequential(
+                    nn.Conv2d(in_channels, out_channels=h_dim,
+                              kernel_size=3, stride=2, padding=1),
+                    nn.BatchNorm2d(h_dim),
+                    nn.LeakyReLU())
+            )
+            in_channels = h_dim
+
+        self.encoder = nn.Sequential(*modules)
+        self.fc_mu = nn.Linear(hidden_dims[-1]*4, latent_dims)
+        self.fc_var = nn.Linear(hidden_dims[-1]*4, latent_dims)
+
+        # Build Decoder
+        modules = []
+        self.decoder_input = nn.Linear(latent_dims, hidden_dims[-1] * 4)
+
+        hidden_dims.reverse()
+
+        for i in range(len(hidden_dims) - 1):
+            modules.append(
+                nn.Sequential(
+                    nn.ConvTranspose2d(hidden_dims[i],
+                                       hidden_dims[i + 1],
+                                       kernel_size=3,
+                                       stride=2,
+                                       padding=1,
+                                       output_padding=1),
+                    nn.BatchNorm2d(hidden_dims[i + 1]),
+                    nn.LeakyReLU())
+            )
+
+        self.decoder = nn.Sequential(*modules)
+
+        self.final_layer = nn.Sequential(
+            nn.ConvTranspose2d(hidden_dims[-1],
+                               hidden_dims[-1],
+                               kernel_size=3,
+                               stride=2,
+                               padding=1,
+                               output_padding=1),
+            nn.BatchNorm2d(hidden_dims[-1]),
+            nn.LeakyReLU(),
+            nn.Conv2d(hidden_dims[-1], out_channels=out_channels,
+                      kernel_size=3, padding=1),
+            nn.Tanh())
+
+    def encode(self, input):
+        """
+        Encodes the input by passing through the convolutional network
+        and outputs the latent variables.
+
+        Params:
+            input (Tensor): Input tensor [N x C x H x W]
+
+        Returns:
+            mu (Tensor) and log_var (Tensor) of latent variables
+        """
+
+        result = self.encoder(input)
+        result = torch.flatten(result, start_dim=1)
+
+        # Split the result into mu and var components
+        # of the latent Gaussian distribution
+        mu = self.fc_mu(result)
+        log_var = self.fc_var(result)
+
+        if self.flow_check:
+            z, log_det = self.reparameterize(mu, log_var)
+            return mu, log_var, z, log_det
+
+        else:
+            z = self.reparameterize(mu, log_var)
+            return mu, log_var, z
+
+    def decode(self, z):
+        """
+        Maps the given latent variables
+        onto the image space.
+
+        Params:
+            z (Tensor): Latent variable [B x D]
+
+        Returns:
+            result (Tensor) [B x C x H x W]
+        """
+
+        result = self.decoder_input(z)
+        result = result.view(-1, 512, 2, 2)
+        result = self.decoder(result)
+        result = self.final_layer(result)
+
+        return result
+
+    def reparameterize(self, mu, logvar):
+        """
+        Reparameterization trick to sample from N(mu, var) from
+        N(0,1)
+
+        Params:
+            mu (Tensor): Mean of Gaussian latent variables [B x D]
+            logvar (Tensor): log-Variance of Gaussian latent variables [B x D]
+
+        Returns: 
+            z (Tensor) [B x D]
+        """
+
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        z = eps.mul(std).add_(mu)
+
+        if self.flow_check:
+            return self.flow(z)
+
+        else:
+            return z
+
+    def forward(self, input, **kwargs):
+
+        if self.flow_check:
+            mu, log_var, z, log_det = self.encode(input)
+
+            return self.decode(z), mu, log_var, log_det
+
+        else:
+             mu, log_var, z = self.encode(input)
+
+             return self.decode(z), mu, log_var
+
+    def sample(self,
+               num_samples: int,
+               current_device: int, **kwargs):
+        """
+        Samples from the latent space and return the corresponding
+        image space map.
+
+        Params:
+            num_samples (Int): Number of samples
+            current_device (Int): Device to run the model
+
+        Returns:
+            samples (Tensor)
+        """
+
+        z = torch.randn(num_samples,
+                        self.latent_dim)
+        z = z.to(current_device)
+        samples = self.decode(z)
+
+        return samples
+
+    def generate(self, x , **kwargs):
+        """
+        Given an input image x, returns the reconstructed image
+
+        Params:
+            x (Tensor): input image Tensor [B x C x H x W]
+
+        Returns:
+            (Tensor) [B x C x H x W]
+        """
+
+        return self.forward(x)[0]
+
+class Vqvae2AdaptiveVae(Vqvae2Adaptive):
+    def __init__(
+            self,
+            in_channel=3,
+            channel=128,
+            n_res_block=5,
+            n_res_channel=32,
+            embed_dim=64,
+            n_embed=512,
+            decay=0.99,
+        latent_dims=200, 
+        in_channels=1, 
+        out_channels=1,
+    ):
+        super().__init__()
+
+        self.enc_b = Encoder(in_channel, channel, n_res_block, n_res_channel, stride=4)
+        self.enc_t = Encoder(channel, channel, n_res_block, n_res_channel, stride=2)
+        self.quantize_conv_t = nn.Conv2d(channel, embed_dim, 1)
+        self.quantize_t = QuantizeAdaptive(embed_dim, n_embed)
+        self.dec_t = Decoder(
+            embed_dim, embed_dim, channel, n_res_block, n_res_channel, stride=2
+        )
+        self.quantize_conv_b = nn.Conv2d(embed_dim + channel, embed_dim, 1)
+        self.quantize_b = QuantizeAdaptive(embed_dim, n_embed)
+        self.upsample_t = nn.ConvTranspose2d(
+            embed_dim, embed_dim, 4, stride=2, padding=1
+        )
+        self.dec = Decoder(
+            embed_dim + embed_dim,
+            in_channel,
+            channel,
+            n_res_block,
+            n_res_channel,
+            stride=4,
+        )
+        self.vae_top=VanillaVAE(in_channels=in_channels,latent_dims=latent_dims, out_channels=out_channels)
+        self.vae_bottom=VanillaVAE(in_channels=in_channels,latent_dims=latent_dims, out_channels=out_channels)
+        
+
+    def forward(self, input,n_embedded_l=None, dim_l=None):
+        quant_t, quant_b, diff, _, _ = self.encode(input,n_embedded_l=n_embedded_l, dim_l=dim_l)
+        quant_t_out, mu_t, log_var_t=self.vae_top(quant_t)
+        quant_b_out, mu_b, log_var_b=self.vae_bottom(quant_b)
+        dec = self.decode(quant_t_out, quant_b_out)
+
+        elbo_t=self.elbo_loss(quant_t_out, quant_t, mu_t, log_var_t)
+        elbo_b=self.elbo_loss(quant_b_out, quant_b, mu_b, log_var_b)
+
+        return dec, diff, elbo_t, elbo_b
+
+    def elbo_loss(self, recon_x, x, mu, logvar, beta=1):
+        """
+        ELBO Optimization objective for gaussian posterior
+        (reconstruction term + regularization term)
+        """
+        reconstruction_function = nn.MSELoss(reduction='sum')
+        MSE = reconstruction_function(recon_x, x)
+    
+        # https://arxiv.org/abs/1312.6114 (Appendix B)
+        # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+    
+        KLD_element = mu.pow(2).add_(logvar.exp()).mul_(-1).add_(1).add_(logvar)
+        KLD = torch.sum(KLD_element).mul_(-0.5)
+    
+        return MSE + beta*KLD
+
+
 
 
 
