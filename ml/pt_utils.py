@@ -756,6 +756,7 @@ class VanillaVAE(BaseModel):
                  hidden_dims: List[int] = None,
                  flow_check=False,
                  out_channels=3,
+                 flag_128=False,
                  **kwargs) -> None:
         """Instantiates the VAE model
 
@@ -795,7 +796,7 @@ class VanillaVAE(BaseModel):
         self.decoder_input = nn.Linear(latent_dims, hidden_dims[-1] * 4)
 
         hidden_dims.reverse()
-
+            
         for i in range(len(hidden_dims) - 1):
             modules.append(
                 nn.Sequential(
@@ -977,8 +978,8 @@ class Vqvae2AdaptiveVae(Vqvae2Adaptive):
             n_res_channel,
             stride=4,
         )
-        self.vae_top=VanillaVAE(in_channels=in_channels,latent_dims=latent_dims, out_channels=out_channels)
-        self.vae_bottom=VanillaVAE(in_channels=in_channels,latent_dims=latent_dims, out_channels=out_channels)
+        self.vae_top=VanillaVAE(in_channels=in_channels,latent_dims=latent_dims, out_channels=out_channels, hidden_dims=[32, 64, 128, 256, 512])
+        self.vae_bottom=VanillaVAE(in_channels=in_channels,latent_dims=latent_dims, out_channels=out_channels, hidden_dims=[16, 32, 64, 128, 256, 512])
         
 
     def forward(self, input,n_embedded_l=None, dim_l=None):
