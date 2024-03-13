@@ -22,6 +22,8 @@ from torchvision import datasets, transforms, utils
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple
 from torchvision.datasets import ImageFolder
 from numpy import random
+
+import time
 from abc import abstractmethod
 
 LOCAL_PROCESS_GROUP = None
@@ -366,13 +368,13 @@ class Trainer():
 
     @classmethod
     def train(cls, model, optimizer, train_loader, test_loader, model_path, epochs=100, device='cuda',
-              latent_loss_weight=0.25, sample_size=25):
+              latent_loss_weight=0.25, sample_size=25, print_text=False):
 
         if os.path.exists(model_path) is False:
             os.mkdir(model_path)
 
         for epoch in range(epochs):
-
+            
             if is_primary():
                 train_loader = tqdm(train_loader)
 
@@ -384,6 +386,8 @@ class Trainer():
             train_mean_loss = []
 
             for i, (img, label) in enumerate(train_loader):
+                
+                start=time.time()
                 model.zero_grad()
 
                 img = img.to(device)
@@ -406,17 +410,18 @@ class Trainer():
                 for part in comm:
                     mse_sum += part["mse_sum"]
                     mse_n += part["mse_n"]
-
+                
+                end=time.time()
                 if is_primary():
                     lr = optimizer.param_groups[0]["lr"]
-
+                    text= f"epoch: {epoch + 1}; step: {i+1}/{len(train_loader)}; eta: {(end-start)*(len(train_loader)-i)/60:.1f} min; loss: {str(round(np.mean(train_mean_loss), 5))}; mse:{recon_loss.item():.5f}; latent: {latent_loss.item():.3f}; avg mse: {mse_sum / mse_n:.5f}; lr: {lr:.5f}"
                     train_loader.set_description(
                         (
-                            f"epoch: {epoch + 1}; loss: {str(round(np.mean(train_mean_loss), 5))}; mse: {recon_loss.item():.5f}; "
-                            f"latent: {latent_loss.item():.3f}; avg mse: {mse_sum / mse_n:.5f}; "
-                            f"lr: {lr:.5f}"
+                           text
                         )
                     )
+                if print_text:
+                    print(text)
 
                 model.train()
 
