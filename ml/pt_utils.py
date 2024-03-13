@@ -366,7 +366,7 @@ class Trainer():
 
     @classmethod
     def train(cls, model, optimizer, train_loader, test_loader, model_path, epochs=100, device='cuda',
-              latent_loss_weight=0.25, sample_size=25):
+              latent_loss_weight=0.25, sample_size=25, print_text=False):
 
         if os.path.exists(model_path) is False:
             os.mkdir(model_path)
@@ -409,14 +409,16 @@ class Trainer():
 
                 if is_primary():
                     lr = optimizer.param_groups[0]["lr"]
-
-                    train_loader.set_description(
-                        (
-                            f"epoch: {epoch + 1}; loss: {str(round(np.mean(train_mean_loss), 5))}; mse: {recon_loss.item():.5f}; "
+                    text= f"epoch: {epoch + 1}; loss: {str(round(np.mean(train_mean_loss), 5))}; mse: {recon_loss.item():.5f}; "
                             f"latent: {latent_loss.item():.3f}; avg mse: {mse_sum / mse_n:.5f}; "
                             f"lr: {lr:.5f}"
+                    train_loader.set_description(
+                        (
+                           text
                         )
                     )
+                if print_text:
+                    print(text)
 
                 model.train()
 
