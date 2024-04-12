@@ -39,5 +39,6 @@
 /ml/__pycache__/*
 
 /ml/embs/*
+/ml/vqvae2_rosalinity/.ipynb_checkpoints/*
 /ml/test/*
 /embs/*
