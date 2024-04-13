@@ -10,7 +10,7 @@ import torch.optim as optim
 import torchvision.datasets
 import torchvision.transforms
 
-from vq_vae_2.examples.mnist.model import Generator, make_vq_vae
+from examples.mnist.model import Generator, make_vq_vae
 
 BATCH_SIZE = 32
 LR = 1e-3

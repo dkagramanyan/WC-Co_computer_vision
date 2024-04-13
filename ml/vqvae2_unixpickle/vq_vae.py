@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .vq import VQ, vq_loss
+from vq import VQ, vq_loss
 
 
 class Encoder(nn.Module):

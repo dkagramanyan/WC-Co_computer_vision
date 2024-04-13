@@ -135,7 +135,7 @@ class VQ(nn.Module):
 
     def _update_tracker(self, idxs):
         raw_idxs = set(idxs.detach().cpu().numpy().flatten())
-        update = -np.ones([self.num_latents], dtype=np.int)
+        update = -np.ones([self.num_latents], dtype=np.int32)
         for idx in raw_idxs:
             update[idx] = self.dead_rate
         self.usage_count.data.add_(torch.from_numpy(update).to(self.usage_count.device).long())

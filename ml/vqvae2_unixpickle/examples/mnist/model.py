@@ -4,8 +4,8 @@ A basic PixelCNN + VQ-VAE model.
 
 import torch.nn as nn
 
-from vq_vae_2.pixel_cnn import PixelCNN, PixelConvA, PixelConvB
-from vq_vae_2.vq_vae import QuarterDecoder, QuarterEncoder, VQVAE
+from pixel_cnn import PixelCNN, PixelConvA, PixelConvB
+from vq_vae import QuarterDecoder, QuarterEncoder, VQVAE
 
 LATENT_SIZE = 16
 LATENT_COUNT = 32

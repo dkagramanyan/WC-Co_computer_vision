@@ -12,9 +12,9 @@ Popular vq-vae-2 repos
     3) 119 stars
     4) 16 forks
 
-3) ? unixpickle https://github.com/unixpickle/vq-vae-2
+3) -+ unixpickle https://github.com/unixpickle/vq-vae-2
     1) sampling
-    2) looks normal
+    2) looks normal. Seems, that there is full sampling with 3 levels of hierarchy
     3) 76 stars
     4) 16 forks
     

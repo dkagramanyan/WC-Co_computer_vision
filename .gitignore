@@ -40,6 +40,11 @@
 
 /ml/embs/*
 /ml/vqvae2_unixpickle/.ipynb_checkpoints/*
+/ml/vqvae2_unixpickle/runs/*
+/ml/vqvae2_unixpickle/data/*
+/ml/vqvae2_unixpickle/__pycache__/*
 /ml/vqvae2_rosalinity/.ipynb_checkpoints/*
+/ml/vqvae2_rosalinity/__pycache__/*
+/ml/vqvae2_rosalinity/runs/*
 /ml/test/*
 /embs/*
