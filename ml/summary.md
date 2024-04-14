@@ -1,6 +1,6 @@
 Popular vq-vae-2 repos
 
-1) ? rosinality https://github.com/rosinality/vq-vae-2-pytorch
+1) - rosinality https://github.com/rosinality/vq-vae-2-pytorch
     1) sampling, comlicated
     2) some code for pixelsnail training, no good results
     3) 1.5k stars
@@ -24,7 +24,7 @@ Popular vq-vae-2 repos
     3) 34 stars
     4) 8 forks
 
-5) - the-engineer-programmer https://github.com/TheEngineerProgrammer/my_masters_thesis/blob/main/models/VQ-VAE2.ipynb
+5) ? the-engineer-programmer https://github.com/TheEngineerProgrammer/my_masters_thesis/blob/main/models/VQ-VAE2.ipynb
     1) good train and sampling
     2) TensorFlow
     3) 4 stars
