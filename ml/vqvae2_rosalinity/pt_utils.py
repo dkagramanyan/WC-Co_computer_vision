@@ -23,6 +23,8 @@ from typing import Any, Callable, cast, Dict, List, Optional, Tuple
 from torchvision.datasets import ImageFolder
 from numpy import random
 
+from skimage.filters import threshold_otsu, median
+
 import time
 from abc import abstractmethod
 
@@ -1126,4 +1128,29 @@ class Embeddings():
             plt.savefig(f'{name}.png', bbox_inches = 'tight')
         plt.show()
 
+        
 
+class Trans(torch.nn.Module):
+
+    def __init__(self, kernel_size=3):
+        self.kernel_size=kernel_size
+    
+    def __call__(self, tensor):
+        x=tensor.cpu().detach().numpy()
+
+        x_temp=[]
+        for x_i in x:
+            x_temp.append(median(x_i, self.kernel_size))
+
+        x=x_temp.copy()
+        x_temp=[]
+        for x_i in x:
+            thresh = threshold_otsu(x_i)
+            binary = x_i > thresh
+            x_temp.append(x_i*255)
+
+        x=x_temp.copy()
+        return torch.FloatTensor(x) 
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(kernel_size={self.ketnel_size})"

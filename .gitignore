@@ -46,5 +46,10 @@
 /ml/vqvae2_rosalinity/.ipynb_checkpoints/*
 /ml/vqvae2_rosalinity/__pycache__/*
 /ml/vqvae2_rosalinity/runs/*
+/ml/vqvae2_rosalinity/distributed/__pycache__/*
 /ml/test/*
 /embs/*
+
+/ml/diffusion/data/*
+/ml/diffusion/runs/*
+/ml/diffusion/.ipynb_checkpoints/*
