@@ -1133,7 +1133,7 @@ class grainGenerate():
             json.dump({'data': json_data}, outfile, cls=cls.NumpyEncoder, ensure_ascii=False)
 
     @classmethod
-    def beams_legend(cls,images_amount, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
+    def beams_legend(cls, images_amount, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
         """
         :param name: str
         :param itype: str
@@ -1165,10 +1165,12 @@ class grainGenerate():
     @staticmethod
     class NumpyEncoder(json.JSONEncoder):
         def default(self, obj):
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()
-            if isinstance(obj, np.integer):
-                return int(obj)
+            if isinstance(obj, np.float64) or isinstance(obj, np.float32):
+                return float(obj)
+            if isinstance(obj, np.int64) or isinstance(obj, np.int32): 
+                return int(obj)  
+            if isinstance(obj, np.ndarray): 
+                return list(obj)  
             return json.JSONEncoder.default(self, obj)
 
     @classmethod
@@ -1243,9 +1245,9 @@ class grainGenerate():
 
             name = paths[i].split('/')[-1]
 
-            legend1 = grainGenerate.beams_legend(name, types_dict[name], norm1, k1, angle1, b1, score1, dist_step,
+            legend1 = grainGenerate.beams_legend(0, name, types_dict[name], norm1, k1, angle1, b1, score1, dist_step,
                                                  distances1.mean() * pixel)
-            legend2 = grainGenerate.beams_legend(name, types_dict[name], norm2, k2, angle2, b2, score2, dist_step,
+            legend2 = grainGenerate.beams_legend(0, name, types_dict[name], norm2, k2, angle2, b2, score2, dist_step,
                                                  distances2.mean() * pixel)
 
             json_data.append({'path': paths[i],
