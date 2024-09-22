@@ -46,6 +46,8 @@ import json
 
 from collections import Counter
 
+from crdp import rdp
+
 handler = StreamHandler(stream=sys.stdout)
 handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
 
@@ -484,7 +486,8 @@ class grainMark():
         new_contours = []
         for j, cnt in enumerate(contours):
             if len(cnt) > 2:
-                coords = approximate_polygon(cnt, tolerance=tol)
+                # coords = approximate_polygon(cnt, tolerance=tol)
+                coords = rdp(cnt, tol)
                 new_contours.append(coords)
             else:
                 continue
@@ -511,7 +514,8 @@ class grainMark():
                      image.shape[1] - cnt[:, 1].max() > border_eps, cnt[:, 1].min() > border_eps]
             # проверяем находится ли контур у границы, но это срабатывает очень редко
             if all(rules):
-                cnt_aprox = approximate_polygon(cnt, tolerance=tol)
+                # cnt_aprox = approximate_polygon(cnt, tolerance=tol)
+                cnt_aprox = rdp(cnt, tol)
                 # основная проверка на неправильные контуры
                 if len(cnt_aprox) > 3:
                     for i, point in enumerate(cnt_aprox[:-1]):
