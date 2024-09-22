@@ -824,26 +824,29 @@ class grainStats():
         # приведение углов к кратости, например 0,step,2*step и тд
         # работает только для целых чисел!!!
         #
-        new_array = []
         if step != 0:
-            for i, a in enumerate(array):
-                array_element = array[i]
-                val = array_element % step
-                if val != 0:
-                    if val < step / 2:
-                        array_element = array_element - val
-                    else:
-                        array_element = array_element + step - val
-                new_array.append(array_element)
+            array = np.array(array)
+            val = array % step
+            condition = val != 0
 
-            new_array = np.round(new_array)
+            adjusted_array = np.where(
+                condition & (val < step / 2), 
+                array - val, 
+                np.where(condition, array + step - val, array)
+            )
+
+            new_array = np.round(adjusted_array)
 
             cnt = Counter(new_array)
-            counts = np.array(list(cnt.items()),dtype=np.float32)
+            counts = np.array(list(cnt.items()), dtype=np.float32)
             counts = counts[counts[:, 0].argsort()]
 
-            # polygon_areas, areas_set, areas_dens_curve
-            return np.array(new_array,dtype=np.float32), counts[:, 0], counts[:, 1]
+            x = counts[:, 0]
+            y = counts[:, 1]
+
+            y = y/np.sum(y)
+            return x, y
+        
         else:
             print('step is 0, stats preprocess error')
 
@@ -1107,17 +1110,13 @@ class grainGenerate():
                 all_unique_angels[j]=ang
                 all_angles.extend(ang)
 
-            angles, angles_set, dens_curve = grainStats.stats_preprocess(all_angles, step)
-
-            x = angles_set
-            norm = np.sum(dens_curve)
-            y = dens_curve/norm
+            x, y = grainStats.stats_preprocess(all_angles, step)
 
             (x_gauss, y_gauss), mus, sigmas, amps = grainApprox.bimodal_gauss_approx(x, y)
 
             name = paths[i].split('/')[-1]
 
-            text = grainGenerate.angles_legend(max_images_num_per_class, types_dict[name], types_dict[name], step, mus, sigmas,amps, norm)
+            text = grainGenerate.angles_legend(max_images_num_per_class, types_dict[name], types_dict[name], step, mus, sigmas,amps, len(all_angles) )
 
             json_data.append({'path': paths[i],
                               'name': name,
@@ -1212,23 +1211,18 @@ class grainGenerate():
                 all_angles.extend(angles)
                 all_contours.extend((contours))
 
-            distances1, dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
-            distances2, dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
+            dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
+            dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
 
-            angles, angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'),
-                                                                                step=step)
-
-            norm1 = round(np.sum(dens1_curve), 6)
-            norm2 = round(np.sum(dens2_curve), 6)
-            norm_angles = round(np.sum(angles_dens_curve), 6)
+            angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'), step=step)
 
             x1 = np.array([dist1_set]).reshape(-1, 1) * pixel
             x2 = np.array([dist2_set]).reshape(-1, 1) * pixel
             x_angles = np.array([angles_set]).reshape(-1, 1)
 
-            y1 = np.log([dens1_curve / norm1]).reshape(-1, 1)
-            y2 = np.log([dens2_curve / norm2]).reshape(-1, 1)
-            y_angles = np.array([angles_dens_curve / norm_angles]).reshape(-1, 1)
+            y1 = np.log(dens1_curve).reshape(-1, 1)
+            y2 = np.log(dens2_curve).reshape(-1, 1)
+            y_angles = angles_dens_curve.reshape(-1, 1)
 
             x1 = x1[start:end]
             x2 = x2[start:end]
@@ -1244,11 +1238,12 @@ class grainGenerate():
             dist_step = pixel * step
 
             name = paths[i].split('/')[-1]
+            
+            dist1_set_mean = np.sum(dist1_set*dens1_curve) * pixel
+            dist2_set_mean = np.sum(dist2_set*dens2_curve) * pixel
 
-            legend1 = grainGenerate.beams_legend(0, name, types_dict[name], norm1, k1, angle1, b1, score1, dist_step,
-                                                 distances1.mean() * pixel)
-            legend2 = grainGenerate.beams_legend(0, name, types_dict[name], norm2, k2, angle2, b2, score2, dist_step,
-                                                 distances2.mean() * pixel)
+            legend1 = grainGenerate.beams_legend(0, name, types_dict[name], norm1, k1, angle1, b1, score1, dist_step, dist1_set_mean)
+            legend2 = grainGenerate.beams_legend(0, name, types_dict[name], norm2, k2, angle2, b2, score2, dist_step, dist2_set_mean)
 
             json_data.append({'path': paths[i],
                               'name': name,
