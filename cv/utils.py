@@ -29,6 +29,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageOps
 from sklearn.linear_model import LinearRegression
 
 from scipy import ndimage
+import os
 
 import copy
 import cv2
@@ -47,6 +48,7 @@ import json
 from collections import Counter
 
 from crdp import rdp
+from torch.utils.data import Dataset
 
 handler = StreamHandler(stream=sys.stdout)
 handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
@@ -55,6 +57,78 @@ logger = logging.getLogger(__name__)
 logger.addHandler(handler)
 
 file_path = os.getcwd() + '/utils.py'
+
+# median filter +
+# otsu - 
+# sobel + 
+# canny +
+
+class SEMDataset(Dataset):
+    def __init__(self, images_folder_path, no_cache=False, max_images_num_per_class=10):
+        
+        if images_folder_path[-1]=='/':
+            raise ValueError('remove last "/" in path ')
+        
+        self.cached_dir = 'tmp/'+ images_folder_path.split('/')[-1]
+        
+        if os.path.exists(self.cached_dir) is False or no_cache:
+            
+            Path(self.cached_dir).mkdir(parents=True, exist_ok=True)
+            
+            folders_paths = glob.glob(images_folder_path + '/*')
+            images_paths = []
+            
+            for folder_path in folders_paths:
+                images_paths.extend(glob.glob(folder_path + '/*')[:max_images_num_per_class])
+                folder_name = folder_path.split('/')[-1]
+                
+                new_folder_path = self.cached_dir + '/' + folder_name
+                Path(new_folder_path).mkdir(parents=True, exist_ok=True)
+            
+            for image_path in tqdm(images_paths):
+                image = io.imread(image_path)
+                image = self.preprocess_image(image)
+                
+                splitted=image_path.split('/')
+                folder_name, file_name = splitted[-2], splitted[-1]
+                io.imsave(self.cached_dir + '/' + folder_name + '/' + file_name, image)
+            
+        folders_paths = glob.glob(self.cached_dir + '/*')
+        folder_names= [folder_path.split('/')[-1] for folder_path in folders_paths] 
+            
+        self.images_paths = np.array([glob.glob(self.cached_dir + f'/{folder_name}/*')[:max_images_num_per_class] for folder_name in folder_names])
+            
+
+    def __len__(self):
+        return len(self.images_paths)
+
+    def __getitem__(self, class_idx, idx):
+        path = self.images_paths[class_idx, idx]
+        image = io.imread(path)
+        return image, path
+
+        
+    def preprocess_image(cls, image):
+        # комбинация медианного фильтра, биноризации и градиента
+        # у зерен значение пикселя - 0, у регионов связ. в-ва - 127,а у их границы - 254
+        
+        # image = util.img_as_ubyte(image)
+        # if len(image.shape) < 3:
+        #     image = image[..., np.newaxis]
+            
+        image = color.rgb2gray(image)
+        image = filters.rank.median(image, morphology.disk(3))
+
+        global_thresh = filters.threshold_otsu(image)
+        image = image > global_thresh
+        binary = image*255
+
+        grad = abs(filters.rank.gradient(binary, morphology.disk(1)))
+        bin_grad = (1 - binary + grad) * 127
+
+        return bin_grad.astype(np.uint8)
+        
+        
 
 
 class grainPreprocess():
