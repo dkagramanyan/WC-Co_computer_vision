@@ -116,8 +116,8 @@ class SEMDataset(Dataset):
         # image = util.img_as_ubyte(image)
         # if len(image.shape) < 3:
         #     image = image[..., np.newaxis]
-            
-        image = color.rgb2gray(image)
+        if len(image.shape)==3:
+            image = color.rgb2gray(image)
         image = filters.rank.median(image, morphology.disk(3))
 
         global_thresh = filters.threshold_otsu(image)
@@ -129,8 +129,6 @@ class SEMDataset(Dataset):
 
         return bin_grad.astype(np.uint8)
         
-        
-
 
 class grainPreprocess():
 
@@ -1165,7 +1163,7 @@ class grainGenerate():
         return legend
 
     @classmethod
-    def angles_approx_save(cls, save_path, images, paths, types_dict, step, max_images_num_per_class=None):
+    def angles_approx_save(self, images_path, save_path, types_dict, step, max_images_num_per_class=None, no_cache=False):
         """
         :param save_path:
         :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
@@ -1174,41 +1172,47 @@ class grainGenerate():
         :param step: scalar int [0,N]
         :param max_images_num_per_class:
         """
-    #
-    # вычисление и сохранение распределения углов для всех фотографий одного образца
-    #
+        #
+        # вычисление и сохранение распределения углов для всех фотографий одного образца
+        #
 
         json_data = []
 
-        for i, images_list in tqdm(enumerate(images)):
-            all_angles = []
-            all_unique_angels=dict()
+        dataset = SEMDataset(images_path, no_cache=no_cache, max_images_num_per_class=max_images_num_per_class)
 
-            for j, image in enumerate(tqdm(images_list[:max_images_num_per_class])):
+
+        for i in tqdm(range(dataset.images_paths.shape[0])):
+            all_angles = []
+            # all_unique_angels=dict()
+
+            for j in tqdm(range(dataset.images_paths.shape[1])):
+                image, path = dataset.__getitem__(i,j)
                 ang=grainMark.get_angles(image)
-                all_unique_angels[j]=ang
+
+                # all_unique_angels[j]=ang
                 all_angles.extend(ang)
 
             x, y = grainStats.stats_preprocess(all_angles, step)
 
             (x_gauss, y_gauss), mus, sigmas, amps = grainApprox.bimodal_gauss_approx(x, y)
+            name = path.split('/')[-2]
 
-            name = paths[i].split('/')[-1]
+            text = grainGenerate.angles_legend(dataset.images_paths.shape[1], types_dict[name], types_dict[name], step, mus, sigmas,amps, len(all_angles) )
 
-            text = grainGenerate.angles_legend(max_images_num_per_class, types_dict[name], types_dict[name], step, mus, sigmas,amps, len(all_angles) )
+            path='/'.join(path.split('/')[:-1])
 
-            json_data.append({'path': paths[i],
+            json_data.append({'path': path,
                               'name': name,
                               'type': types_dict[name],
                               'legend': text,
                               'density_curve_scatter': [x,y],
                               'gauss_approx_plot': [x_gauss, y_gauss],
                               'gauss_approx_data': {'mus': mus, 'sigmas':sigmas, 'amps':amps},
-                              'angles_series': all_unique_angels,
+                              # 'angles_series': all_unique_angels,
                               })
 
         with open(f'{save_path}_step_{step}_angles.json', 'w', encoding='utf-8') as outfile:
-            json.dump({'data': json_data}, outfile, cls=cls.NumpyEncoder, ensure_ascii=False)
+            json.dump(json_data, outfile, cls=grainGenerate.NumpyEncoder, ensure_ascii=False)
 
     @classmethod
     def beams_legend(cls, images_amount, name, itype, norm, k, angle, b, score, dist_step, dist_mean):
