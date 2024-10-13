@@ -1256,100 +1256,94 @@ class grainGenerate():
             return json.JSONEncoder.default(self, obj)
 
     @classmethod
-    def diametr_approx_save(cls, save_path, images, paths, types_dict, step, pixel, start=2, end=-3,
-                            debug=False, max_images_num_per_class=None):
-        """
-        :param folder: str
-        :param images: ndarray uint8 [[image1_class1,image2_class1,..],[image1_class2,image2_class2,..]..]
-        :param names: list str [class_name1,class_name2,..]
-        :param types: list str [class_type1,class_type2,..]
-        :param step: scalar int [0,N]
-        :param pixel: float
-        :param start: int
-        :param end: int
-        :param save: bool
-        :param debug: bool
-        :return: None
-        """
+    def diametr_approx_save(cls, images_path, save_path, types_dict, step, pixel, start=2, end=-3,
+                            debug=False, max_images_num_per_class=None, no_cache=False):
         #
         # вычисление и сохранение распределения длин а- и б- полуосей и угла поворота эллипса для разных образцов
         #
 
         json_data = []
 
-        angles = None
+        dataset = SEMDataset(images_path, no_cache=no_cache, max_images_num_per_class=max_images_num_per_class)
 
-        for i, images_list in enumerate(images):
+        for i in tqdm(range(dataset.images_paths.shape[0])):
 
             all_a_beams = []
             all_b_beams = []
-            all_angles = []
-            all_contours = []
+            # all_angles = []
+            # all_contours = []
 
-            for j, image in enumerate(tqdm(images_list[:max_images_num_per_class])):
+            for j in tqdm(range(dataset.images_paths.shape[1])):
+                image, path = dataset.__getitem__(i,j)
                 b_beams, a_beams, angles, cetroids, contours = grainMark.get_mvee_params(image, 0.2, debug=debug)
 
                 all_a_beams.extend(a_beams)
                 all_b_beams.extend(b_beams)
-                all_angles.extend(angles)
-                all_contours.extend((contours))
+                # all_angles.extend(angles)
+                # all_contours.extend((contours))
 
-            dist1_set, dens1_curve = grainStats.stats_preprocess(all_a_beams, step)
-            dist2_set, dens2_curve = grainStats.stats_preprocess(all_b_beams, step)
+            x1, y1 = grainStats.stats_preprocess(all_a_beams, step)
+            x2, y2 = grainStats.stats_preprocess(all_b_beams, step)
 
             angles_set, angles_dens_curve = grainStats.stats_preprocess(np.rad2deg(angles).astype('int32'), step=step)
 
-            x1 = np.array([dist1_set]).reshape(-1, 1) * pixel
-            x2 = np.array([dist2_set]).reshape(-1, 1) * pixel
-            x_angles = np.array([angles_set]).reshape(-1, 1)
+            x1 = x1.reshape(-1, 1) * pixel
+            x2 = x2.reshape(-1, 1) * pixel
+            # x_angles = np.array([angles_set]).reshape(-1, 1)
 
-            y1 = np.log(dens1_curve).reshape(-1, 1)
-            y2 = np.log(dens2_curve).reshape(-1, 1)
-            y_angles = angles_dens_curve.reshape(-1, 1)
+            y1 = np.log(y1).reshape(-1, 1)
+            y2 = np.log(y2).reshape(-1, 1)
+            # y_angles = angles_dens_curve.reshape(-1, 1)
 
             x1 = x1[start:end]
             x2 = x2[start:end]
-            x_angles = x_angles[start:end]
+            # x_angles = x_angles[start:end]
 
             y1 = y1[start:end]
             y2 = y2[start:end]
-            y_angles = y_angles[start:end]
+            # y_angles = y_angles[start:end]
 
             (x_pred1, y_pred1), k1, b1, angle1, score1 = grainApprox.lin_regr_approx(x1, y1)
             (x_pred2, y_pred2), k2, b2, angle2, score2 = grainApprox.lin_regr_approx(x2, y2)
 
             dist_step = pixel * step
 
-            name = paths[i].split('/')[-1]
-            
-            dist1_set_mean = np.sum(dist1_set*dens1_curve) * pixel
-            dist2_set_mean = np.sum(dist2_set*dens2_curve) * pixel
+            name = path.split('/')[-2]
 
-            legend1 = grainGenerate.beams_legend(0, name, types_dict[name], norm1, k1, angle1, b1, score1, dist_step, dist1_set_mean)
-            legend2 = grainGenerate.beams_legend(0, name, types_dict[name], norm2, k2, angle2, b2, score2, dist_step, dist2_set_mean)
+            # dist1_set_mean = np.sum(dist1_set*dens1_curve) * pixel
+            # dist2_set_mean = np.sum(dist2_set*dens2_curve) * pixel
 
-            json_data.append({'path': paths[i],
+            dist1_set_mean = 0
+            dist2_set_mean = 0
+
+            legend1 = grainGenerate.beams_legend(0, name, types_dict[name], len(all_a_beams), k1, angle1, b1, score1, dist_step, dist1_set_mean)
+            legend2 = grainGenerate.beams_legend(0, name, types_dict[name], len(all_b_beams), k2, angle2, b2, score2, dist_step, dist2_set_mean)
+
+            path='/'.join(path.split('/')[:-1])
+
+            json_data.append({'path': path,
                               'name': name,
                               'type': types_dict[name],
                               'legend': [{'a_beams': legend1, 'b_beams': legend2}],
                               'density_curve_scatter': [
                                   {'a_beams': (x1.flatten(), y1.flatten()),
                                    'b_beams': (x2.flatten(), y2.flatten()),
-                                   'angles': (x_angles.flatten(), y_angles.flatten())
+                                   # 'angles': (x_angles.flatten(), y_angles.flatten())
                                    }
                               ],
                               'linear_approx_plot': [{'a_beams': (x_pred1.flatten(), y_pred1.flatten()),
                                                       'b_beams': (x_pred2.flatten(), y_pred2.flatten())}],
                               'linear_approx_data': [{'a_beams': {'k': k1, 'b': b1, 'angle': angle1, 'score': score1},
                                                       'b_beams': {'k': k2, 'b': b2, 'angle': angle2, 'score': score2}}],
-                              'beams_length_series': [{'a_beams': all_a_beams, 'b_beams': all_b_beams}],
-                              'angles_series': all_angles,
-                              'contours_series': all_contours,
+                              # 'beams_length_series': [{'a_beams': all_a_beams, 'b_beams': all_b_beams}],
+                              # 'angles_series': all_angles,
+                              # 'contours_series': all_contours,
                               'pixel2meter': pixel,
                               })
 
         with open(f'{save_path}_step_{step}_beams.json', 'w', encoding='utf-8') as outfile:
-            json.dump({'data': json_data}, outfile, cls=cls.NumpyEncoder, ensure_ascii=False)
+            json.dump(json_data, outfile, cls=cls.NumpyEncoder, ensure_ascii=False)
+
 
 
 class GrainLogs():
