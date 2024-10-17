@@ -760,6 +760,52 @@ class grainShow():
         plt.plot(x, y)
 
         plt.show()
+        
+    
+    @classmethod
+    def angles_plot_base(cls, data, save_name, step, N, M,  save=False,indices=None, font_size=20,scatter_size=20):
+        alloys_indices=range(len(data))
+
+        if indices is not None:
+            alloys_indices=indices
+
+        plt.rcParams['font.size'] = '15'
+        plt.figure(figsize=(N, M))
+
+        # маркеры для одновременного вывода скаттера для разных классов
+        # количество варкеров=количество классов-1
+        markers = ['v', 's', 'D', 'd', 'p', '*','P']
+        colors = ['orange', 'red','blue','green', 'indigo']
+
+        legend=[]
+        for i in alloys_indices:
+            legend.append(data[i]['name']+' '+data[i]['type'])
+
+        for i in alloys_indices:
+            plt.plot(data[i]['gauss_approx_plot'][0], 
+                     data[i]['gauss_approx_plot'][1],
+                     color=colors[i])
+
+        for i in alloys_indices:
+            marker = markers[i]
+            plt.scatter(data[i]['density_curve_scatter'][0],data[i]['density_curve_scatter'][1],  marker=marker,color=colors[i],s=scatter_size)
+
+        plt.ylabel('p(x)', fontsize=font_size)
+        plt.xlabel('углы, градусы', fontsize=font_size)
+
+        x = [0,60,120,180,240,300,360]
+        plt.xticks(x, x)
+
+        plt.title(save_name)
+
+        if save:
+            plt.savefig(f'распределение_углов_{save_name}_шаг_{step}.png')
+
+        plt.legend(legend)
+        plt.show()
+        
+        for i in alloys_indices:
+            print(data[i]['legend'])
 
 
 class grainDraw():
