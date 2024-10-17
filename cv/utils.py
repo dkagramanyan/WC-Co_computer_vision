@@ -92,7 +92,9 @@ class SEMDataset(Dataset):
                 
                 splitted=image_path.split('/')
                 folder_name, file_name = splitted[-2], splitted[-1]
-                io.imsave(self.cached_dir + '/' + folder_name + '/' + file_name, image)
+                file_name = file_name.split('.')[0]
+                
+                io.imsave(self.cached_dir + '/' + folder_name + '/' + file_name + '.png', image)
             
         folders_paths = glob.glob(self.cached_dir + '/*')
         folder_names= [folder_path.split('/')[-1] for folder_path in folders_paths] 
@@ -110,14 +112,9 @@ class SEMDataset(Dataset):
 
         
     def preprocess_image(cls, image):
-        # комбинация медианного фильтра, биноризации и градиента
-        # у зерен значение пикселя - 0, у регионов связ. в-ва - 127,а у их границы - 254
-        
-        # image = util.img_as_ubyte(image)
-        # if len(image.shape) < 3:
-        #     image = image[..., np.newaxis]
         if len(image.shape)==3:
             image = color.rgb2gray(image)
+            
         image = filters.rank.median(image, morphology.disk(3))
 
         global_thresh = filters.threshold_otsu(image)
@@ -126,8 +123,9 @@ class SEMDataset(Dataset):
 
         grad = abs(filters.rank.gradient(binary, morphology.disk(1)))
         bin_grad = (1 - binary + grad) * 127
+        bin_grad = bin_grad.astype(np.uint8)
 
-        return bin_grad.astype(np.uint8)
+        return bin_grad
         
 
 class grainPreprocess():
