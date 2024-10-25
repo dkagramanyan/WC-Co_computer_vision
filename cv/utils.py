@@ -51,6 +51,9 @@ from crdp import rdp
 from pathlib import Path
 from torch.utils.data import Dataset
 
+from multiprocessing import Lock, Process, Queue, current_process
+import multiprocessing
+
 handler = StreamHandler(stream=sys.stdout)
 handler.setFormatter(Formatter(fmt='[%(asctime)s: %(levelname)s] %(message)s'))
 
@@ -65,12 +68,15 @@ file_path = os.getcwd() + '/utils.py'
 # canny +
 
 class SEMDataset(Dataset):
-    def __init__(self, images_folder_path, no_cache=False, max_images_num_per_class=10):
+    def __init__(self, images_folder_path, no_cache=False, max_images_num_per_class=10, workers=None):
+        
+        self.cached_dir = 'tmp/'+ images_folder_path.split('/')[-1]
+        
+        if workers is None:
+            workers = multiprocessing.cpu_count()-1
         
         if images_folder_path[-1]=='/':
             raise ValueError('remove last "/" in path ')
-        
-        self.cached_dir = 'tmp/'+ images_folder_path.split('/')[-1]
         
         if os.path.exists(self.cached_dir) is False or no_cache:
             
@@ -86,21 +92,52 @@ class SEMDataset(Dataset):
                 new_folder_path = self.cached_dir + '/' + folder_name
                 Path(new_folder_path).mkdir(parents=True, exist_ok=True)
             
-            for image_path in tqdm(images_paths):
-                image = io.imread(image_path)
-                image = self.preprocess_image(image)
+            number_of_tasks = len(folders_paths)
+            images_paths = np.array(images_paths).reshape((number_of_tasks,-1))
+
+            tasks_to_accomplish = Queue()
+            tqdm_queue = Queue()
+            processes = []
+        
+            for i in range(number_of_tasks):
+                tasks_to_accomplish.put(images_paths[i])
+            
+            for w in range(workers):
+                p = Process(target=self.do_job, args=(tasks_to_accomplish,self.cached_dir,tqdm_queue))
+                processes.append(p)
+                p.start()
                 
-                splitted=image_path.split('/')
-                folder_name, file_name = splitted[-2], splitted[-1]
-                file_name = file_name.split('.')[0]
+            total = images_paths.shape[0]*images_paths.shape[1]
                 
-                io.imsave(self.cached_dir + '/' + folder_name + '/' + file_name + '.png', image)
+            with tqdm(total=total) as pbar:
+                completed = 0
+                while completed < total:
+                    tqdm_queue.get()
+                    pbar.update(1)
+                    completed += 1
+
+            for p in processes:
+                p.join()
             
         folders_paths = glob.glob(self.cached_dir + '/*')
         folder_names= [folder_path.split('/')[-1] for folder_path in folders_paths] 
             
         self.images_paths = np.array([glob.glob(self.cached_dir + f'/{folder_name}/*')[:max_images_num_per_class] for folder_name in folder_names])
-            
+    
+    @classmethod
+    def do_job(self, tasks_to_accomplish, cached_dir, tqdm_queue):
+        while not tasks_to_accomplish.empty():
+            images_paths = tasks_to_accomplish.get()
+            for image_path in images_paths:
+                image = io.imread(image_path)
+                image = self.preprocess_image(image)
+
+                splitted=image_path.split('/')
+                folder_name, file_name = splitted[-2], splitted[-1]
+                file_name = file_name.split('.')[0]
+
+                io.imsave(cached_dir + '/' + folder_name + '/' + file_name + '.png', image)
+                tqdm_queue.put(1)
 
     def __len__(self):
         return len(self.images_paths)
@@ -110,20 +147,21 @@ class SEMDataset(Dataset):
         image = io.imread(path)
         return image, path
 
-        
-    def preprocess_image(cls, image):
+    @classmethod
+    def preprocess_image(self, image):
         if len(image.shape)==3:
             image = color.rgb2gray(image)
-            
+        
         image = filters.rank.median(image, morphology.disk(3))
 
         global_thresh = filters.threshold_otsu(image)
         image = image > global_thresh
         binary = image*255
+        binary = binary.astype(np.uint8)
 
         grad = abs(filters.rank.gradient(binary, morphology.disk(1)))
         bin_grad = (1 - binary + grad) * 127
-        bin_grad = bin_grad.astype(np.uint8)
+        bin_grad = np.clip(bin_grad, 0, 255).astype(np.uint8)
 
         return bin_grad
         
