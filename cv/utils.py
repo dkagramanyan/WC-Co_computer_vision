@@ -1,6 +1,6 @@
-import numpy as np
 import os
 import requests
+import numpy as np
 
 from matplotlib import pyplot as plt
 from matplotlib import cm
@@ -865,41 +865,24 @@ class grainDraw():
         return image
 
     @classmethod
-    def draw_edges(cls, image, cnts, color=(50, 50, 50), r=4, e_width=5, l_width=4):
-        """
-        :param image: ndarray (width, height, channels)
-        :param cnts: ndarray (n_cnts,n,2)
-        :param color: tuple (3,)
-        :return: ndarray (width, height, channels)
-        """
-        #
-        # рисует на изображении линии по точкам контура cnts
-        # линии в стиле x^1->x^2,x^2->x^3 и тд
-        #
-        new_image = copy.copy(image)
-        im = Image.fromarray(np.uint8(cm.gist_earth(new_image) * 255))
-        draw = ImageDraw.Draw(im)
-
+    def draw_contours(cls, image, cnts, color_corner=(0, 139, 139), color_line = (255, 140, 0),  r=2, e_width=5, l_width=2, corners = False):
+    
+        img = copy.copy(image)
+        draw = ImageDraw.Draw(img)
+    
         for j, cnt in enumerate(cnts):
-            if len(cnt) > 1:
-                point = cnt[0]
-                x1, y1 = point[1], point[0]
-
-                for i, point2 in enumerate(cnt):
-                    p2 = point2
-
-                    x2, y2 = p2[1], p2[0]
-
-                    draw.ellipse((y2 - r, x2 - r, y2 + r, x2 + r), fill=color, width=e_width)
-                    draw.line((y1, x1, y2, x2), fill=(100, 100, 100), width=l_width)
-                    x1, y1 = x2, y2
-
-            else:
-                continue
-
-        img = np.array(im)
-
+            points_stack = np.stack([cnt, np.roll(cnt,shift=-1,axis=0)],axis=1)
+            
+            for points in points_stack:
+                y1, x1 = points[0]
+                y2, x2 = points[1]
+                if corners:
+                    draw.ellipse((y2 - r, x2 - r, y2 + r, x2 + r), fill=color_corner, width=e_width)
+                draw.line((y1, x1, y2, x2), fill=color_line, width=l_width)
+    
         return img
+    
+
 
     @classmethod
     def draw_tree(cls, img, centres=False, leafs=False, nodes=False, bones=False):
@@ -981,7 +964,6 @@ class grainStats():
         """
         #
         # приведение углов к кратости, например 0,step,2*step и тд
-        # работает только для целых чисел!!!
         #
         if step != 0:
             array = np.array(array)
@@ -1452,3 +1434,49 @@ class GrainLogs():
         # Print New Line on Complete
         if iteration == total:
             print()
+
+
+def paths_queues():
+
+    workers = 23
+    
+    def do_job(tasks_to_accomplish,result_queue,  tqdm_queue):
+        while not tasks_to_accomplish.empty():
+            entry_node, exit_node = tasks_to_accomplish.get()
+            paths = list(nx.all_simple_paths(g, source=entry_node, target=exit_node))
+            tqdm_queue.put(1)
+            result_queue.put([{'paths':paths,
+                              'entry_node':entry_node,
+                              'exit_node':exit_node,}])
+    
+    cart_list=[entry_nodes, exit_nodes]
+    cart_list=[element for element in itertools.product(*cart_list)]
+    
+    number_of_tasks = len(cart_list)
+    
+    tasks_to_accomplish = Queue()
+    result_queue = Queue()
+    tqdm_queue = Queue()
+    processes = []
+    
+    for i in range(number_of_tasks):
+        tasks_to_accomplish.put(cart_list[i])
+    
+    for w in range(workers):
+        p = Process(target=do_job, args=(tasks_to_accomplish, result_queue, tqdm_queue))
+        processes.append(p)
+        p.start()
+        
+    with tqdm(total=number_of_tasks) as pbar:
+        completed = 0
+        while completed < number_of_tasks:
+            tqdm_queue.get()
+            pbar.update(1)
+            completed += 1
+    
+    results = []
+    while not result_queue.empty():
+        results.extend(result_queue.get())
+    
+    for p in processes:
+        p.join()
