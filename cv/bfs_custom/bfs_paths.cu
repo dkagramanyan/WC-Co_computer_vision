@@ -330,15 +330,28 @@ void saveAllPaths(const std::vector<std::vector<int>> &allPaths,
         std::cerr << "Cannot open output file: " << outFilename << "\n";
         return;
     }
+
+    // Write JSON array start
+    out << "[\n";
+
     for (size_t i = 0; i < allPaths.size(); i++) {
+        out << "  [";
         for (size_t j = 0; j < allPaths[i].size(); j++) {
             out << allPaths[i][j];
-            if (j+1 < allPaths[i].size()) {
-                out << " -> ";
+            if (j + 1 < allPaths[i].size()) {
+                out << ", ";  // JSON-style comma separation
             }
+        }
+        out << "]";
+        if (i + 1 < allPaths.size()) {
+            out << ",";  // Comma between path arrays
         }
         out << "\n";
     }
+
+    // Write JSON array end
+    out << "]\n";
+
     out.close();
     std::cout << "Saved " << allPaths.size() << " paths to " << outFilename << "\n";
 }
@@ -390,7 +403,7 @@ int main(int argc, char** argv)
     // -------------------------------------------------------------------------
     std::ostringstream outFile;
     std::string baseFilename = std::filesystem::path(filename).stem().string();
-    outFile << "bfs_paths_" << start << "_" << end <<"_" << baseFilename << ".txt";
+    outFile << "bfs_paths_" << start << "_" << end <<"_" << baseFilename << ".json";
 
     saveAllPaths(allPaths, outFile.str());
     std::cout << "Total paths found: " << allPaths.size() << "\n";
@@ -420,20 +433,27 @@ int main(int argc, char** argv)
     // -------------------------------------------------------------------------
     // 7) Write statistics to a file
     // -------------------------------------------------------------------------
-    {   std::ostringstream stats_filename;
-        stats_filename << "bfs_stats_" << start << "_" << end << "_" << baseFilename <<".txt"; 
-
+    {   
+        std::ostringstream stats_filename;
+        stats_filename << "bfs_stats_" << start << "_" << end << "_" << baseFilename << ".csv"; 
+    
         std::ofstream statsOut(stats_filename.str());
         if (!statsOut.is_open()) {
-            std::cerr << "Cannot open execution_stats.txt for writing.\n";
+            std::cerr << "Cannot open " << stats_filename.str() << " for writing.\n";
         } else {
-            statsOut << "Execution Time (seconds): " << elapsedSec << "\n";
-            statsOut << "Peak CPU RAM (MB): " << peakRamKB/1024 << "\n";
-            statsOut << "Peak GPU VRAM (MB): " << peakGpuBytes/(1024*1024) << "\n";
+            // Write CSV headers
+            statsOut << "Execution Time (seconds),Peak CPU RAM (MB),Peak GPU VRAM (MB)\n";
+            
+            // Write data values
+            statsOut << elapsedSec << "," 
+                     << (peakRamKB / 1024) << "," 
+                     << (peakGpuBytes / (1024 * 1024)) << "\n";
+            
             statsOut.close();
-            std::cout << "Saved execution stats to execution_stats.txt\n";
+            std::cout << "Saved execution stats to " << stats_filename.str() << "\n";
         }
     }
+
 
     return 0;
 }
