@@ -9,8 +9,8 @@
 #include <algorithm>
 #include <cassert>
 #include <chrono>
-#include <sys/resource.h>  // For getrusage() to measure peak CPU RAM usage
-#include <filesystem> // C++17 for std::filesystem::path
+#include <sys/resource.h>     // For getrusage() to measure peak CPU RAM usage
+#include <filesystem>         // C++17 for std::filesystem::path, create_directories
 
 // Uncomment for debug prints
 // #define DEBUG_PRINT
@@ -29,8 +29,8 @@
 // -----------------------------------------------------------------------------
 // Global variables to track peak GPU VRAM usage
 // -----------------------------------------------------------------------------
-static size_t g_totalGPUMem = 0;         // total GPU memory (constant per device)
-static size_t g_minFreeMem = SIZE_MAX;   // smallest "free memory" encountered
+static size_t g_totalGPUMem   = 0;       // total GPU memory (constant per device)
+static size_t g_minFreeMem    = SIZE_MAX; 
 static bool   g_memInitialized = false;
 
 // A small utility function to update the global minimum free GPU memory
@@ -42,9 +42,10 @@ void updateVRAMUsage() {
     // Query current free/total memory
     size_t freeMem = 0, totalMem = 0;
     cudaMemGetInfo(&freeMem, &totalMem);
+
     // Initialize our global total memory (once only)
     if (!g_memInitialized) {
-        g_totalGPUMem = totalMem;
+        g_totalGPUMem   = totalMem;
         g_memInitialized = true;
     }
     // Track the minimum free memory
@@ -53,7 +54,7 @@ void updateVRAMUsage() {
     }
 }
 
-// We define custom wrappers for cudaMalloc/cudaFree
+// Define custom wrappers for cudaMalloc/cudaFree
 // so that each time we allocate/free, we update usage info.
 template <typename T>
 inline void myCudaMalloc(T** ptr, size_t size) {
@@ -104,10 +105,10 @@ void loadGraph(const std::string &filename, Graph &G)
     in.close();
 
     G.numVertices = maxNodeId + 1;
-    G.numEdges    = (int)edges.size();
+    G.numEdges    = static_cast<int>(edges.size());
 
     G.edgesOffset.resize(G.numVertices, 0);
-    G.edgesSize  .resize(G.numVertices, 0);
+    G.edgesSize.resize(G.numVertices,   0);
 
     // Count outdegree for each vertex
     for (auto &e : edges) {
@@ -136,8 +137,8 @@ void loadGraph(const std::string &filename, Graph &G)
 // -----------------------------------------------------------------------------
 // CUDA kernel: given a set of vertices in frontNodes, look up their neighbors
 // in parallel. We'll collect all neighbors in a big array. We also store
-// how many neighbors each vertex has in outDegrees[i], so that the CPU can know
-// how to slice the neighbor array correctly later.
+// how many neighbors each vertex has in outDegrees[i], so that the CPU can
+// know how to slice the neighbor array correctly later.
 // -----------------------------------------------------------------------------
 __global__
 void kernel_expand_front(int nFront,
@@ -173,15 +174,14 @@ void kernel_expand_front(int nFront,
 // -----------------------------------------------------------------------------
 struct PathItem {
     std::vector<int> path;
-    std::vector<bool> visited;  // visited[v] = true if 'v' is already in path
+    std::vector<bool> visited;  // visited[v] = true if 'v' is in path
 
-    PathItem(int n) : visited(n, false) {}
+    explicit PathItem(int n) : visited(n, false) {}
 };
 
 // -----------------------------------------------------------------------------
 // BFS-like enumeration of all simple paths from start->end using adjacency
 // expansions on the GPU. We store all partial paths in a queue on the CPU.
-//
 // If your graph has cycles or is large, this can blow up in memory/time!!
 // -----------------------------------------------------------------------------
 void findAllPathsBFS_GPU(const Graph &G, int start, int end, 
@@ -197,14 +197,14 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
     }
 
     // Allocate GPU adjacency
-    int *d_adjList   = nullptr;
-    int *d_offsets   = nullptr;
-    int *d_sizes     = nullptr;
+    int *d_adjList = nullptr;
+    int *d_offsets = nullptr;
+    int *d_sizes   = nullptr;
 
     // Use our custom wrappers to track memory usage
-    myCudaMalloc(&d_adjList,   G.adjacencyList.size() * sizeof(int));
-    myCudaMalloc(&d_offsets,   G.numVertices         * sizeof(int));
-    myCudaMalloc(&d_sizes,     G.numVertices         * sizeof(int));
+    myCudaMalloc(&d_adjList, G.adjacencyList.size() * sizeof(int));
+    myCudaMalloc(&d_offsets, G.numVertices         * sizeof(int));
+    myCudaMalloc(&d_sizes,   G.numVertices         * sizeof(int));
 
     CUDA_CHECK(cudaMemcpy(d_adjList, G.adjacencyList.data(),
                           G.adjacencyList.size()*sizeof(int), cudaMemcpyHostToDevice));
@@ -217,11 +217,11 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
     // But we store *all* partial paths that haven't yet reached 'end'.
     while (true) {
         if (queue.empty()) {
-            break; // no more partial paths to expand
+            break; 
         }
 
         // 1) Collect the last node of each path in queue[] into frontNodes[]
-        const int nFront = (int)queue.size();
+        const int nFront = static_cast<int>(queue.size());
         std::vector<int> frontNodes(nFront);
         for (int i = 0; i < nFront; i++) {
             frontNodes[i] = queue[i].path.back(); 
@@ -256,7 +256,7 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
         {
             int blockSize = 128;
             int gridSize  = (nFront + blockSize - 1) / blockSize;
-            kernel_expand_front<<<gridSize, blockSize>>>(
+            kernel_expand_front<<<gridSize, blockSize>>>( 
                 nFront, d_frontNodes, d_adjList, d_offsets, d_sizes,
                 d_outDegrees, d_neighbors
             );
@@ -275,7 +275,7 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
             // 8) Build the next wave of partial paths by expanding
             //    each path in the queue with all its neighbors
             std::vector<PathItem> nextQueue;
-            nextQueue.reserve(nFront * 2); // rough guess
+            nextQueue.reserve(nFront * 2); 
 
             for (int i = 0; i < nFront; i++) {
                 const PathItem &pitem = queue[i];
@@ -302,6 +302,7 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
             queue.swap(nextQueue);
         }
         else {
+            // If maxOutDegree=0, no neighbors -> no expansions
             queue.clear();
         }
 
@@ -320,7 +321,7 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
 }
 
 // -----------------------------------------------------------------------------
-// Save all paths to a text file
+// Save all paths to a text file (in JSON array format)
 // -----------------------------------------------------------------------------
 void saveAllPaths(const std::vector<std::vector<int>> &allPaths,
                   const std::string &outFilename)
@@ -339,26 +340,27 @@ void saveAllPaths(const std::vector<std::vector<int>> &allPaths,
         for (size_t j = 0; j < allPaths[i].size(); j++) {
             out << allPaths[i][j];
             if (j + 1 < allPaths[i].size()) {
-                out << ", ";  // JSON-style comma separation
+                out << ", ";
             }
         }
         out << "]";
         if (i + 1 < allPaths.size()) {
-            out << ",";  // Comma between path arrays
+            out << ",";
         }
         out << "\n";
     }
 
     // Write JSON array end
     out << "]\n";
-
     out.close();
-    std::cout << "Saved " << allPaths.size() << " paths to " << outFilename << "\n";
+
+    std::cout << "Saved " << allPaths.size() 
+              << " paths to " << outFilename << "\n";
 }
 
 // -----------------------------------------------------------------------------
 // Main
-// Usage: ./bfs_paths edges.txt start end
+// Usage: ./bfs_paths edges.txt start end out_directory
 // -----------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
@@ -367,13 +369,26 @@ int main(int argc, char** argv)
     // -------------------------------------------------------------------------
     auto tStart = std::chrono::high_resolution_clock::now();
 
-    if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " edges.txt start end\n";
+    if (argc < 5) {
+        std::cerr << "Usage: " << argv[0] 
+                  << " <edges.txt> <start> <end> <out_directory>\n";
         return 1;
     }
-    std::string filename = argv[1];
-    int start = std::stoi(argv[2]);
-    int end   = std::stoi(argv[3]);
+
+    // Parse input arguments
+    std::string filename    = argv[1];
+    int         start       = std::stoi(argv[2]);
+    int         end         = std::stoi(argv[3]);
+    std::string outDirArg   = argv[4];
+
+    // Make sure the output directory exists (or create it)
+    std::filesystem::path outDir(outDirArg);
+    try {
+        std::filesystem::create_directories(outDir);
+    } catch (const std::exception &ex) {
+        std::cerr << "Error creating output directory: " << ex.what() << "\n";
+        return 1;
+    }
 
     // -------------------------------------------------------------------------
     // 2) Load graph
@@ -399,13 +414,17 @@ int main(int argc, char** argv)
     findAllPathsBFS_GPU(G, start, end, allPaths);
 
     // -------------------------------------------------------------------------
-    // 4) Save results to a text file
+    // 4) Construct output filenames and save the BFS paths to JSON
     // -------------------------------------------------------------------------
-    std::ostringstream outFile;
+    // We'll derive a base name from the edges file: e.g. "graph" if edges = "graph.txt"
     std::string baseFilename = std::filesystem::path(filename).stem().string();
-    outFile << "bfs_paths_" << start << "_" << end <<"_" << baseFilename << ".json";
 
-    saveAllPaths(allPaths, outFile.str());
+    // BFS paths JSON
+    std::ostringstream outFile;
+    outFile << "bfs_paths_" << start << "_" << end << "_" << baseFilename << ".json";
+    std::filesystem::path outJsonPath = outDir / outFile.str();
+
+    saveAllPaths(allPaths, outJsonPath.string());
     std::cout << "Total paths found: " << allPaths.size() << "\n";
 
     // -------------------------------------------------------------------------
@@ -422,38 +441,38 @@ int main(int argc, char** argv)
     // -------------------------------------------------------------------------
     // 6) Compute peak GPU usage
     // -------------------------------------------------------------------------
-    // g_minFreeMem is the minimum "free memory" seen
+    // g_minFreeMem is the minimum "free memory" recorded
     // g_totalGPUMem is the total GPU memory we recorded
-    // So peak usage is (total - minFree).
+    // => peak usage = (total - minFree)
     size_t peakGpuBytes = 0;
     if (g_memInitialized) {
         peakGpuBytes = g_totalGPUMem - g_minFreeMem;
     }
 
     // -------------------------------------------------------------------------
-    // 7) Write statistics to a file
+    // 7) Write statistics to CSV in the output directory
     // -------------------------------------------------------------------------
-    {   
-        std::ostringstream stats_filename;
-        stats_filename << "bfs_stats_" << start << "_" << end << "_" << baseFilename << ".csv"; 
-    
-        std::ofstream statsOut(stats_filename.str());
-        if (!statsOut.is_open()) {
-            std::cerr << "Cannot open " << stats_filename.str() << " for writing.\n";
-        } else {
-            // Write CSV headers
-            statsOut << "Execution Time (seconds),Peak CPU RAM (MB),Peak GPU VRAM (MB)\n";
-            
-            // Write data values
-            statsOut << elapsedSec << "," 
-                     << (peakRamKB / 1024) << "," 
-                     << (peakGpuBytes / (1024 * 1024)) << "\n";
-            
-            statsOut.close();
-            std::cout << "Saved execution stats to " << stats_filename.str() << "\n";
-        }
-    }
+    std::ostringstream statsFilename;
+    statsFilename << "bfs_stats_" << start << "_" << end << "_" << baseFilename << ".csv";
+    std::filesystem::path outCsvPath = outDir / statsFilename.str();
 
+    std::ofstream statsOut(outCsvPath);
+    if (!statsOut.is_open()) {
+        std::cerr << "Cannot open " << outCsvPath.string() << " for writing.\n";
+    } else {
+        // Write CSV headers
+        statsOut << "Execution Time (seconds),Peak CPU RAM (MB),Peak GPU VRAM (MB)\n";
+        
+        // Write data values
+        double peakRamMB    = static_cast<double>(peakRamKB) / 1024.0;           // from KB to MB
+        double peakGpuMB    = static_cast<double>(peakGpuBytes) / (1024.0 * 1024.0); 
+        statsOut << elapsedSec << "," 
+                 << peakRamMB << "," 
+                 << peakGpuMB << "\n";
+        
+        statsOut.close();
+        std::cout << "Saved execution stats to " << outCsvPath.string() << "\n";
+    }
 
     return 0;
 }
