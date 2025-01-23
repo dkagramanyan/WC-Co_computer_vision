@@ -8,6 +8,9 @@
 #include <climits>
 #include <algorithm>
 #include <cassert>
+#include <chrono>
+#include <sys/resource.h>  // For getrusage() to measure peak CPU RAM usage
+#include <filesystem> // C++17 for std::filesystem::path
 
 // Uncomment for debug prints
 // #define DEBUG_PRINT
@@ -22,6 +25,46 @@
             exit(EXIT_FAILURE);                                                 \
         }                                                                        \
     } while(0)
+
+// -----------------------------------------------------------------------------
+// Global variables to track peak GPU VRAM usage
+// -----------------------------------------------------------------------------
+static size_t g_totalGPUMem = 0;         // total GPU memory (constant per device)
+static size_t g_minFreeMem = SIZE_MAX;   // smallest "free memory" encountered
+static bool   g_memInitialized = false;
+
+// A small utility function to update the global minimum free GPU memory
+// after each allocation/free. The difference (total - g_minFreeMem) is
+// effectively the maximum usage we've seen.
+void updateVRAMUsage() {
+    // Ensure all operations have completed
+    cudaDeviceSynchronize();
+    // Query current free/total memory
+    size_t freeMem = 0, totalMem = 0;
+    cudaMemGetInfo(&freeMem, &totalMem);
+    // Initialize our global total memory (once only)
+    if (!g_memInitialized) {
+        g_totalGPUMem = totalMem;
+        g_memInitialized = true;
+    }
+    // Track the minimum free memory
+    if (freeMem < g_minFreeMem) {
+        g_minFreeMem = freeMem;
+    }
+}
+
+// We define custom wrappers for cudaMalloc/cudaFree
+// so that each time we allocate/free, we update usage info.
+template <typename T>
+inline void myCudaMalloc(T** ptr, size_t size) {
+    CUDA_CHECK(cudaMalloc((void**)ptr, size));
+    updateVRAMUsage();
+}
+
+inline void myCudaFree(void* ptr) {
+    CUDA_CHECK(cudaFree(ptr));
+    updateVRAMUsage();
+}
 
 // -----------------------------------------------------------------------------
 // Graph Structure (adjacency list in CSR-like form)
@@ -91,7 +134,7 @@ void loadGraph(const std::string &filename, Graph &G)
 }
 
 // -----------------------------------------------------------------------------
-// CUDA kernel: given a set of vertices in `frontNodes`, look up their neighbors
+// CUDA kernel: given a set of vertices in frontNodes, look up their neighbors
 // in parallel. We'll collect all neighbors in a big array. We also store
 // how many neighbors each vertex has in outDegrees[i], so that the CPU can know
 // how to slice the neighbor array correctly later.
@@ -157,29 +200,21 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
     int *d_adjList   = nullptr;
     int *d_offsets   = nullptr;
     int *d_sizes     = nullptr;
-    CUDA_CHECK( cudaMalloc((void**)&d_adjList,   G.adjacencyList.size() * sizeof(int)) );
-    CUDA_CHECK( cudaMalloc((void**)&d_offsets,   G.numVertices         * sizeof(int)) );
-    CUDA_CHECK( cudaMalloc((void**)&d_sizes,     G.numVertices         * sizeof(int)) );
 
-    CUDA_CHECK( cudaMemcpy(d_adjList, G.adjacencyList.data(),
-                           G.adjacencyList.size()*sizeof(int), cudaMemcpyHostToDevice) );
-    CUDA_CHECK( cudaMemcpy(d_offsets, G.edgesOffset.data(),
-                           G.numVertices*sizeof(int), cudaMemcpyHostToDevice) );
-    CUDA_CHECK( cudaMemcpy(d_sizes,   G.edgesSize.data(),
-                           G.numVertices*sizeof(int), cudaMemcpyHostToDevice) );
+    // Use our custom wrappers to track memory usage
+    myCudaMalloc(&d_adjList,   G.adjacencyList.size() * sizeof(int));
+    myCudaMalloc(&d_offsets,   G.numVertices         * sizeof(int));
+    myCudaMalloc(&d_sizes,     G.numVertices         * sizeof(int));
+
+    CUDA_CHECK(cudaMemcpy(d_adjList, G.adjacencyList.data(),
+                          G.adjacencyList.size()*sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_offsets, G.edgesOffset.data(),
+                          G.numVertices*sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_sizes,   G.edgesSize.data(),
+                          G.numVertices*sizeof(int), cudaMemcpyHostToDevice));
 
     // We'll expand BFS in "waves" until no more expansions are possible.
     // But we store *all* partial paths that haven't yet reached 'end'.
-    //
-    // BFS-layers will come from queue -> nextQueue -> nextQueue -> ...
-    // Each "layer" expands the last node of each path in parallel on the GPU.
-    //
-    // Note: This enumerates paths in increasing order of path length, but it
-    // does NOT stop upon first reaching 'end'—it collects *all* possible paths.
-    //
-    // If there's a cycle, we rely on 'visited[]' to skip re-visiting nodes,
-    // thus enumerating only simple paths.
-
     while (true) {
         if (queue.empty()) {
             break; // no more partial paths to expand
@@ -194,20 +229,18 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
 
         // 2) Copy frontNodes[] to GPU
         int *d_frontNodes = nullptr;
-        CUDA_CHECK( cudaMalloc((void**)&d_frontNodes, nFront*sizeof(int)) );
-        CUDA_CHECK( cudaMemcpy(d_frontNodes, frontNodes.data(),
-                               nFront*sizeof(int), cudaMemcpyHostToDevice) );
+        myCudaMalloc(&d_frontNodes, nFront * sizeof(int));
+        CUDA_CHECK(cudaMemcpy(d_frontNodes, frontNodes.data(),
+                              nFront*sizeof(int), cudaMemcpyHostToDevice));
 
         // 3) For each of the nFront nodes, we have edgesSize[node] neighbors.
         //    We want to store the total neighbors in outDegrees[] so we can
         //    figure out how to slice them on the CPU side.
-        int *d_outDegrees = nullptr;  // outDegrees[i] = #neighbors of frontNodes[i]
-        CUDA_CHECK( cudaMalloc((void**)&d_outDegrees, nFront*sizeof(int)) );
+        int *d_outDegrees = nullptr;
+        myCudaMalloc(&d_outDegrees, nFront * sizeof(int));
 
-        // 4) We'll store neighbors in a 2D layout [i + j*nFront], where
-        //    i = [0..nFront-1], j = [0..(maxOutDegree-1)]. But we do not
-        //    know the maxOutDegree offhand, so let's find it:
-
+        // 4) We'll store neighbors in a 2D layout [i + j*nFront].
+        //    First find the maxOutDegree among these frontNodes.
         int maxOutDegree = 0;
         for (int fn : frontNodes) {
             maxOutDegree = std::max(maxOutDegree, G.edgesSize[fn]);
@@ -216,43 +249,40 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
         // 5) Allocate device array for neighbors
         int *d_neighbors = nullptr;
         if (maxOutDegree > 0) {
-            CUDA_CHECK( cudaMalloc((void**)&d_neighbors, nFront * maxOutDegree * sizeof(int)) );
+            myCudaMalloc(&d_neighbors, nFront * maxOutDegree * sizeof(int));
         }
 
         // 6) Launch kernel to fill outDegrees[] and neighbors[]
         {
             int blockSize = 128;
-            int gridSize  = (nFront + blockSize - 1)/blockSize;
-            kernel_expand_front<<<gridSize, blockSize>>>( 
-                nFront, d_frontNodes,
-                d_adjList, d_offsets, d_sizes,
+            int gridSize  = (nFront + blockSize - 1) / blockSize;
+            kernel_expand_front<<<gridSize, blockSize>>>(
+                nFront, d_frontNodes, d_adjList, d_offsets, d_sizes,
                 d_outDegrees, d_neighbors
             );
-            CUDA_CHECK( cudaDeviceSynchronize() );
+            CUDA_CHECK(cudaDeviceSynchronize());
         }
 
         // 7) Copy outDegrees + neighbors back to CPU
         std::vector<int> outDegrees(nFront);
         if (maxOutDegree > 0) {
             std::vector<int> neighborsCPU(nFront * maxOutDegree);
-            CUDA_CHECK( cudaMemcpy(outDegrees.data(), d_outDegrees, 
-                                   nFront*sizeof(int), cudaMemcpyDeviceToHost ) );
-            CUDA_CHECK( cudaMemcpy(neighborsCPU.data(), d_neighbors,
-                                   nFront*maxOutDegree*sizeof(int), cudaMemcpyDeviceToHost ) );
+            CUDA_CHECK(cudaMemcpy(outDegrees.data(), d_outDegrees, 
+                                  nFront*sizeof(int), cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(neighborsCPU.data(), d_neighbors,
+                                  nFront*maxOutDegree*sizeof(int), cudaMemcpyDeviceToHost));
 
             // 8) Build the next wave of partial paths by expanding
             //    each path in the queue with all its neighbors
             std::vector<PathItem> nextQueue;
-            nextQueue.reserve(nFront * 2); // guess
+            nextQueue.reserve(nFront * 2); // rough guess
 
             for (int i = 0; i < nFront; i++) {
                 const PathItem &pitem = queue[i];
                 int deg = outDegrees[i];
-                // neighbors for frontNodes[i] are neighborsCPU[i + j*nFront]
-                // for j in [0..deg-1]
                 for (int j = 0; j < deg; j++) {
                     int nbr = neighborsCPU[i + j*nFront];
-                    // skip if we already visited that node in this path
+                    // skip if already visited
                     if (pitem.visited[nbr]) {
                         continue;
                     }
@@ -261,37 +291,32 @@ void findAllPathsBFS_GPU(const Graph &G, int start, int end,
                     newItem.path.push_back(nbr);
                     newItem.visited[nbr] = true;
 
-                    // if we reached 'end', store the path in allPaths
+                    // if we reached 'end', store it
                     if (nbr == end) {
                         allPaths.push_back(newItem.path);
                     } else {
-                        // otherwise, keep expanding in next wave
                         nextQueue.push_back(std::move(newItem));
                     }
                 }
             }
-
-            // swap nextQueue into queue for the next BFS layer
             queue.swap(nextQueue);
         }
         else {
-            // If maxOutDegree = 0, then none of these frontNodes have neighbors
-            // -> no expansions
             queue.clear();
         }
 
         // Clean up this layer
-        CUDA_CHECK( cudaFree(d_frontNodes) );
-        CUDA_CHECK( cudaFree(d_outDegrees) );
+        myCudaFree(d_frontNodes);
+        myCudaFree(d_outDegrees);
         if (maxOutDegree > 0) {
-            CUDA_CHECK( cudaFree(d_neighbors) );
+            myCudaFree(d_neighbors);
         }
     }
 
     // Clean up adjacency on device
-    CUDA_CHECK( cudaFree(d_adjList) );
-    CUDA_CHECK( cudaFree(d_offsets) );
-    CUDA_CHECK( cudaFree(d_sizes) );
+    myCudaFree(d_adjList);
+    myCudaFree(d_offsets);
+    myCudaFree(d_sizes);
 }
 
 // -----------------------------------------------------------------------------
@@ -306,7 +331,6 @@ void saveAllPaths(const std::vector<std::vector<int>> &allPaths,
         return;
     }
     for (size_t i = 0; i < allPaths.size(); i++) {
-        // Print as "0 -> 1 -> 2 -> ..." or similar
         for (size_t j = 0; j < allPaths[i].size(); j++) {
             out << allPaths[i][j];
             if (j+1 < allPaths[i].size()) {
@@ -322,10 +346,14 @@ void saveAllPaths(const std::vector<std::vector<int>> &allPaths,
 // -----------------------------------------------------------------------------
 // Main
 // Usage: ./bfs_paths edges.txt start end
-//        e.g.: ./bfs_paths edges.txt 0 5
 // -----------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+    // -------------------------------------------------------------------------
+    // 1) Start timing
+    // -------------------------------------------------------------------------
+    auto tStart = std::chrono::high_resolution_clock::now();
+
     if (argc < 4) {
         std::cerr << "Usage: " << argv[0] << " edges.txt start end\n";
         return 1;
@@ -334,7 +362,9 @@ int main(int argc, char** argv)
     int start = std::stoi(argv[2]);
     int end   = std::stoi(argv[3]);
 
-    // 1) Load graph
+    // -------------------------------------------------------------------------
+    // 2) Load graph
+    // -------------------------------------------------------------------------
     Graph G;
     loadGraph(filename, G);
 
@@ -349,18 +379,68 @@ int main(int argc, char** argv)
         return 2;
     }
 
-    // 2) Enumerate *all possible simple paths* from start -> end
-    //    using BFS expansions in layers. 
-    //    (WARNING: Can grow exponentially!)
+    // -------------------------------------------------------------------------
+    // 3) Enumerate *all possible simple paths* from start -> end
+    // -------------------------------------------------------------------------
     std::vector<std::vector<int>> allPaths;
     findAllPathsBFS_GPU(G, start, end, allPaths);
 
-    // 3) Save results to a text file
-    std::string outFile = "paths_output.txt";
-    saveAllPaths(allPaths, outFile);
+    // -------------------------------------------------------------------------
+    // 4) Save results to a text file
+    // -------------------------------------------------------------------------
+    std::ostringstream outFile;
+    std::string baseFilename = std::filesystem::path(filename).stem().string();
+    outFile << "bfs_paths_" << start << "_" << end <<"_" << baseFilename << ".txt";
 
-    // Optional: print summary
+    saveAllPaths(allPaths, outFile.str());
     std::cout << "Total paths found: " << allPaths.size() << "\n";
+
+    // -------------------------------------------------------------------------
+    // 5) Stop timing + get CPU peak RAM usage
+    // -------------------------------------------------------------------------
+    auto tEnd = std::chrono::high_resolution_clock::now();
+    double elapsedSec = std::chrono::duration<double>(tEnd - tStart).count();
+
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    // Peak resident set size in kilobytes on Linux/Unix
+    long peakRamKB = usage.ru_maxrss;
+
+    // -------------------------------------------------------------------------
+    // 6) Compute peak GPU usage
+    // -------------------------------------------------------------------------
+    // g_minFreeMem is the minimum "free memory" seen
+    // g_totalGPUMem is the total GPU memory we recorded
+    // So peak usage is (total - minFree).
+    size_t peakGpuBytes = 0;
+    if (g_memInitialized) {
+        peakGpuBytes = g_totalGPUMem - g_minFreeMem;
+    }
+
+    // -------------------------------------------------------------------------
+    // 7) Write statistics to a file
+    // -------------------------------------------------------------------------
+    {   
+        std::ostringstream stats_filename;
+        stats_filename << "bfs_stats_" << start << "_" << end << "_" << baseFilename << ".csv"; 
+    
+        std::ofstream statsOut(stats_filename.str());
+        if (!statsOut.is_open()) {
+            std::cerr << "Cannot open " << stats_filename.str() << " for writing.\n";
+        } else {
+            // Write CSV headers
+            statsOut << "Execution Time (seconds),Peak CPU RAM (MB),Peak GPU VRAM (MB)\n";
+            
+            // Write data values
+            statsOut << elapsedSec << "," 
+                     << (peakRamKB / 1024) << "," 
+                     << (peakGpuBytes / (1024 * 1024)) << "\n";
+            
+            statsOut.close();
+            std::cout << "Saved execution stats to " << stats_filename.str() << "\n";
+        }
+    }
+
 
     return 0;
 }
